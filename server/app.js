@@ -15,7 +15,7 @@ connectDB();
 // Middleware
 app.use(
   cors({
-    origin: "*", // Allow only your frontend domain
+    origin: "https://lead-management-front.vercel.app/", // Allow only your frontend domain
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // Allow cookies and authentication headers
   })
