@@ -13,7 +13,13 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://lead-management-front.vercel.app", // Allow only your frontend domain
+    methods: "GET,POST,PUT,DELETE",
+    credentials: true, // Allow cookies and authentication headers
+  })
+);
 app.use(express.json());
 
 // Routes
