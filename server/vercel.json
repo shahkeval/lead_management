@@ -8,11 +8,11 @@
     ],
     "routes": [
       {
-        "src": "/api/(.*)",
+        "src": "/(.*)",
         "dest": "/app.js",
         "headers": {
-          "Content-Security-Policy": "default-src 'self'; script-src 'self' https://vercel.live",
-            "headers": [
+          "Content-Security-Policy": "default-src 'self'; script-src 'self' https://vercel.live",           
+           "headers": [
               {
                 "key": "Access-Control-Allow-Origin",
                 "value": "https://lead-management-front.vercel.app"
