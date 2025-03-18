@@ -86,7 +86,7 @@ const AppContent = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={canAccessDashbord}>
+            <ProtectedRoute>
               <CombinedDashboard />
             </ProtectedRoute>
           }
