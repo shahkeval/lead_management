@@ -23,6 +23,10 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/leads', require('./routes/leadRoutes'));
 
+app.get('/', async (req, res) => {
+  res.json("WORKING");
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
