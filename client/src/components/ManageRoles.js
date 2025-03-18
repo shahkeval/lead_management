@@ -42,7 +42,7 @@ const ManageRoles = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/roles`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/roles`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -91,7 +91,7 @@ const ManageRoles = () => {
   const handleUpdateRole = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/roles/${editRole._id}`, editRole, {
+      const response = await axios.put(`${process.env.REACT_APP_BASE_URL}api/roles/${editRole._id}`, editRole, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -117,7 +117,7 @@ const ManageRoles = () => {
   const handleDeleteRole = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/roles/${roleToDelete._id}`, {
+      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}api/roles/${roleToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

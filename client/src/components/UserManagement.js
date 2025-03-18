@@ -39,7 +39,7 @@ const UserManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/users`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -95,7 +95,7 @@ const UserManagement = () => {
   const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/users/${userToDelete._id}`, {
+      await axios.delete(`${process.env.REACT_APP_BASE_URL}api/users/${userToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOpenDeleteDialog(false);

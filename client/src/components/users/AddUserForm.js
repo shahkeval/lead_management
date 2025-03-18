@@ -29,7 +29,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
     const fetchRoles = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/roles`, {
+        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/roles`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {
@@ -56,7 +56,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${process.env.REACT_APP_BASE_URL}/api/users`,
+        `${process.env.REACT_APP_BASE_URL}api/users`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` }

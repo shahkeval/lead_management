@@ -28,7 +28,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
     const fetchRoles = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/roles`, {
+        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/roles`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.data.success) {
@@ -66,7 +66,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `${process.env.REACT_APP_BASE_URL}/api/users/${user._id}`,
+        `${process.env.REACT_APP_BASE_URL}api/users/${user._id}`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` }

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: `${process.env.REACT_APP_BASE_URL}/api`
+  baseURL: `${process.env.REACT_APP_BASE_URL}api`
 });
 
 // Add a request interceptor

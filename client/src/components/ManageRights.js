@@ -160,7 +160,7 @@ const ManageRights = () => {
       }
 
       const token = localStorage.getItem('token');
-      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}/api/modules`, {
+      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}api/modules`, {
         moduleName: newModule.moduleName.trim(),
         action: newModule.action,
         parentId: newModule.parentId,
@@ -186,7 +186,7 @@ const ManageRights = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/modules`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/modules`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.data.success) {

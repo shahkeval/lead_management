@@ -31,7 +31,7 @@ const EditLead = () => {
     const fetchLead = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/leads/${leadId}`, {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/leads/${leadId}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -54,7 +54,7 @@ const EditLead = () => {
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/users/list`, {
+            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users/list`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -76,7 +76,7 @@ const EditLead = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}/api/leads/update/${leadId}`, {
+            const response = await axios.put(`${process.env.REACT_APP_BASE_URL}api/leads/update/${leadId}`, {
                 emp_id: selectedUser, // Use the selected user ID
                 client_name: clientName,
                 client_mobile_number: mobileNo,

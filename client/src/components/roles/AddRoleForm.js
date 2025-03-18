@@ -43,7 +43,7 @@ const AddRoleForm = ({ open, handleClose, onRoleAdded }) => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `${process.env.REACT_APP_BASE_URL}/api/roles`, 
+        `${process.env.REACT_APP_BASE_URL}api/roles`, 
         formData,
         {
           headers: {

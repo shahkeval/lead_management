@@ -30,7 +30,7 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
     const fetchModules = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/modules`, {
+        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/modules`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.data.success) {
@@ -80,7 +80,7 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
       }));
 
       await Promise.all(requests.map(data =>
-        axios.post(`${process.env.REACT_APP_BASE_URL}/api/modules`, data, {
+        axios.post(`${process.env.REACT_APP_BASE_URL}api/modules`, data, {
           headers: { Authorization: `Bearer ${token}` },
         })
       ));

@@ -49,7 +49,7 @@ const LeadManagementUser = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/leads/get_persone_lead`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/leads/get_persone_lead`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -68,7 +68,7 @@ const LeadManagementUser = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}/api/users/get_persone_user`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users/get_persone_user`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -121,7 +121,7 @@ const LeadManagementUser = () => {
   const handleDeleteLead = async (leadId) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/leads/${leadId}`, {
+      await axios.delete(`${process.env.REACT_APP_BASE_URL}api/leads/${leadId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchLeads(); // Refresh the leads list
@@ -147,7 +147,7 @@ const LeadManagementUser = () => {
       const token = localStorage.getItem('token');
       if (selectedLead) {
         // Edit lead
-        await axios.put(`${process.env.REACT_APP_BASE_URL}/api/leads/update/${selectedLead._id}`, {
+        await axios.put(`${process.env.REACT_APP_BASE_URL}api/leads/update/${selectedLead._id}`, {
           emp_id: formData.selectedUser,
           client_name: formData.clientName,
           client_mobile_number: formData.mobileNo,
@@ -160,7 +160,7 @@ const LeadManagementUser = () => {
         });
       } else {
         // Add lead
-        await axios.post(`${process.env.REACT_APP_BASE_URL}/api/leads/add`, {
+        await axios.post(`${process.env.REACT_APP_BASE_URL}api/leads/add`, {
           emp_id: formData.selectedUser,
           client_name: formData.clientName,
           client_mobile_number: formData.mobileNo,

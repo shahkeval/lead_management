@@ -68,8 +68,8 @@ const LeadManagement = () => {
       const visibleLeads = user?.role?.visibleLeads; // Assuming this is where you get the value
 
       const endpoint = visibleLeads === "All" 
-        ? `${process.env.REACT_APP_BASE_URL}/api/leads/get` 
-        : `${process.env.REACT_APP_BASE_URL}/api/leads/get_persone_lead`;
+        ? `${process.env.REACT_APP_BASE_URL}api/leads/get` 
+        : `${process.env.REACT_APP_BASE_URL}api/leads/get_persone_lead`;
 
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -89,8 +89,8 @@ const LeadManagement = () => {
       if (!token) throw new Error("Authentication token missing.");
 
       const endpoint = user?.role?.roleName === "sales person" 
-        ? `${process.env.REACT_APP_BASE_URL}/api/users/get_persone_user` 
-        : `${process.env.REACT_APP_BASE_URL}/api/users/list`;
+        ? `${process.env.REACT_APP_BASE_URL}api/users/get_persone_user` 
+        : `${process.env.REACT_APP_BASE_URL}api/users/list`;
 
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -144,7 +144,7 @@ const LeadManagement = () => {
   const confirmDeleteLead = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${process.env.REACT_APP_BASE_URL}/api/leads/${leadToDelete}`, {
+      await axios.delete(`${process.env.REACT_APP_BASE_URL}api/leads/${leadToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchLeads();
@@ -183,11 +183,11 @@ const LeadManagement = () => {
       };
 
       if (selectedLead) {
-        await axios.put(`${process.env.REACT_APP_BASE_URL}/api/leads/update/${selectedLead._id}`, leadData, {
+        await axios.put(`${process.env.REACT_APP_BASE_URL}api/leads/update/${selectedLead._id}`, leadData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } else {
-        await axios.post(`${process.env.REACT_APP_BASE_URL}/api/leads/add`, leadData, {
+        await axios.post(`${process.env.REACT_APP_BASE_URL}api/leads/add`, leadData, {
           headers: { Authorization: `Bearer ${token}` },
         });
       }
