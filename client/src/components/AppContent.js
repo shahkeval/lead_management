@@ -95,7 +95,7 @@ const AppContent = () => {
         <Route
           path="/admin/manage-roles"
           element={
-            <ProtectedRoute allowedRoles={canAccessManageroles}>
+            <ProtectedRoute>
               <ManageRoles />
             </ProtectedRoute>
           }
@@ -104,7 +104,7 @@ const AppContent = () => {
         <Route
           path="/admin/manage-rights/:roleId"
           element={
-            <ProtectedRoute allowedRoles={canAccessManagerights}>
+            <ProtectedRoute >
               <ManageRights />
             </ProtectedRoute>
           }
@@ -113,7 +113,7 @@ const AppContent = () => {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute allowedRoles={["Admin", "sales manager"]}>
+            <ProtectedRoute >
               <UserManagement />
             </ProtectedRoute>
           }
@@ -122,7 +122,7 @@ const AppContent = () => {
         <Route
           path="/leads"
           element={
-            <ProtectedRoute allowedRoles={canAccessLeads}>
+            <ProtectedRoute>
               <LeadManagement />
             </ProtectedRoute>
           }
