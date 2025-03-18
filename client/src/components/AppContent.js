@@ -49,7 +49,7 @@ const AppContent = () => {
   const canAccessManageroles = user?.role?.assignedModules?.some(
     (m) => m.moduleName === "manage roles" && m.action === "view"
   );
-  const canAccessManagerights = user?.role?.assignedModules?.some(
+  const canAccessUser = user?.role?.assignedModules?.some(
     (m) => m.moduleName === "user management" && m.action === "view"
   );
   const canAccessLeads = user?.role?.assignedModules?.some(
@@ -104,7 +104,7 @@ const AppContent = () => {
         <Route
           path="/admin/manage-rights/:roleId"
           element={
-            <ProtectedRoute allowedRoles={canAccessManagerights}>
+            <ProtectedRoute allowedRoles={["Admin", "sales manager"]}>
               <ManageRights />
             </ProtectedRoute>
           }
@@ -113,7 +113,7 @@ const AppContent = () => {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute allowedRoles={["Admin", "sales manager"]}>
+            <ProtectedRoute allowedRoles={canAccessUser}>
               <UserManagement />
             </ProtectedRoute>
           }
