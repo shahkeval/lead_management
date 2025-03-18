@@ -11,28 +11,32 @@
         "src": "/(.*)",
         "dest": "/app.js",
         "headers": {
-          "Content-Security-Policy": "default-src 'self'; script-src 'self' https://vercel.live",           
-           "headers": [
-              {
-                "key": "Access-Control-Allow-Origin",
-                "value": "https://lead-management-front.vercel.app"
-              },
-              {
-                "key": "Access-Control-Allow-Methods",
-                "value": "GET, POST, PUT, DELETE"
-              },
-              {
-                "key": "Access-Control-Allow-Headers",
-                "value": "Content-Type, Authorization"
-              },
-              {
-                "key": "Access-Control-Allow-Credentials",
-                "value": "true"
-              }
-            ]
-          }
-        
+          "Content-Security-Policy": "default-src 'self'; script-src 'self' https://vercel.live"
+        }
       }
-    ]
+    ],
+    "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://lead-management-front.vercel.app"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Access-Control-Allow-Credentials",
+          "value": "true"
+        }
+      ]
+    }
+  ]
   }
   
