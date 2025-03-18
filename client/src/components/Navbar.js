@@ -27,7 +27,6 @@ const Navbar = () => {
       <Toolbar>
         <Typography variant="h6" component={Link} to="/" style={{ flexGrow: 1, textDecoration: 'none', color: 'white' }}>
           Lead Management System
-          hello
         </Typography>
         {user && (
           <Typography variant="body1" style={{ marginRight: '20px', color: 'white' }}>
