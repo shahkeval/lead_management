@@ -86,7 +86,7 @@ const AppContent = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={canAccessDashbord}>
               <CombinedDashboard />
             </ProtectedRoute>
           }
@@ -95,7 +95,7 @@ const AppContent = () => {
         <Route
           path="/admin/manage-roles"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={canAccessManageroles}>
               <ManageRoles />
             </ProtectedRoute>
           }
@@ -104,7 +104,7 @@ const AppContent = () => {
         <Route
           path="/admin/manage-rights/:roleId"
           element={
-            <ProtectedRoute >
+            <ProtectedRoute allowedRoles={canAccessManagerights}>
               <ManageRights />
             </ProtectedRoute>
           }
@@ -113,7 +113,7 @@ const AppContent = () => {
         <Route
           path="/admin/users"
           element={
-            <ProtectedRoute >
+            <ProtectedRoute allowedRoles={["Admin", "sales manager"]}>
               <UserManagement />
             </ProtectedRoute>
           }
@@ -122,7 +122,7 @@ const AppContent = () => {
         <Route
           path="/leads"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={canAccessLeads}>
               <LeadManagement />
             </ProtectedRoute>
           }
