@@ -137,7 +137,7 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
             <MenuItem value="">
               <em>None</em>
             </MenuItem>
-            {parentModules.map(module => (
+            {modules.map(module => (
               <MenuItem key={module._id} value={module._id}>
                 {module.moduleName}
               </MenuItem>
