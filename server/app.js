@@ -16,7 +16,7 @@ connectDB();
 app.use(
   cors({
     // https://lead-management-front.vercel.app
-    origin: "http://localhost:3000", // Allow only your frontend domain
+    origin: "https://lead-management-front.vercel.app", // Allow only your frontend domain
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // Allow cookies and authentication headers
   })
