@@ -43,6 +43,8 @@ const ManageRoles = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
       const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/roles`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -53,7 +55,7 @@ const ManageRoles = () => {
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
-      setError(error.response?.data?.message || 'Error fetching roles');
+      setError(error.response?.data?.message || "Unable to fetch roles. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -92,6 +94,13 @@ const ManageRoles = () => {
   const handleUpdateRole = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      // Validate required fields
+      if (!editRole?.roleName?.trim()) {
+        throw new Error('Role name cannot be empty');
+      }
+
       const response = await axios.put(`${process.env.REACT_APP_BASE_URL}api/roles/${editRole._id}`, editRole, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -101,7 +110,7 @@ const ManageRoles = () => {
         handleCloseEditDialog();
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Error updating role');
+      setError(error.response?.data?.message || error.message || "Failed to update role. Please try again.");
     }
   };
 
@@ -118,6 +127,8 @@ const ManageRoles = () => {
   const handleDeleteRole = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
       const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}api/roles/${roleToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -127,7 +138,7 @@ const ManageRoles = () => {
         handleCloseDeleteDialog(); // Close the dialog
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Error deleting role');
+      setError(error.response?.data?.message || "Failed to delete role. This role may be assigned to users or may have already been deleted.");
     }
   };
 

@@ -107,12 +107,14 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate({
-      path: 'role',
-      populate: {
-        path: 'assignedModules'
-      }
-    });
+    const user = await User.findById(req.user._id)
+      .select('-password') // Exclude password field
+      .populate({
+        path: 'role',
+        populate: {
+          path: 'assignedModules'
+        }
+      });
 
     res.json({
       success: true,

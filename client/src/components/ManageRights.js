@@ -94,6 +94,13 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
 
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      // Validate required fields
+      if (!formData.moduleName || formData.actions.length === 0) {
+        throw new Error('Please provide a module name and select at least one action.');
+      }
+
       const requests = formData.actions.map(action => ({
         moduleName: formData.moduleName,
         action,
@@ -110,7 +117,7 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
       handleClose();
       setFormData({ moduleName: '', actions: [], parentId: '' });
     } catch (error) {
-      setError(error.response?.data?.message || 'Error adding module');
+      setError(error.response?.data?.message || error.message || 'Failed to add module. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -280,8 +287,13 @@ const ManageRights = () => {
 
       // If any selected modules don't exist in database
       if (missingModules.length > 0) {
-        setMessage(`Error: The following modules are not available: ${missingModules.join(', ')}`);
-        // await dispatch(fetchAllModules());
+        setMessage(`The following modules are not available or have been deleted: ${missingModules.join(', ')}. Please refresh and try again.`);
+        return;
+      }
+
+      // Validate that at least one module is selected
+      if (selectedModuleIds.length === 0) {
+        setMessage('Please select at least one module right before saving.');
         return;
       }
 
@@ -297,11 +309,11 @@ const ManageRights = () => {
           // dispatch(fetchAllModules())
         ]);
       } else {
-        setMessage(result.message || 'Failed to update rights');
+        setMessage(result.message || 'Failed to update rights. Please try again.');
       }
     } catch (error) {
       console.error('Error saving rights:', error);
-      setMessage(error.response?.data?.message || 'Failed to update rights');
+      setMessage(error.response?.data?.message || 'Failed to update rights. Please check your connection and try again.');
       await Promise.all([
         dispatch(fetchRoles()),
         // dispatch(fetchAllModules())

@@ -18,6 +18,7 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  Snackbar,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
@@ -73,6 +74,15 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      // Validate required fields
+      const requiredFields = ['email', 'password', 'user_name', 'mobile_name', 'roleId'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      }
+
       const response = await axios.post(
         `${process.env.REACT_APP_BASE_URL}api/users`,
         formData,
@@ -94,7 +104,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
         });
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Error adding user');
+      setError(error.response?.data?.message || error.message || "Failed to add user. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -201,6 +211,9 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('error');
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -214,8 +227,10 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
           setRoles(filter);
         }
       } catch (error) {
-        console.error('Error fetching roles:', error);
         setError('Error fetching roles. Please try again.');
+        setSnackbarMessage('Error fetching roles. Please try again.');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     };
 
@@ -239,13 +254,31 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
       ...formData,
       [e.target.name]: e.target.value
     });
+    // Clear error when user starts typing
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      // Validate required fields
+      const requiredFields = ['email', 'user_name', 'mobile_name', 'roleId'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        throw new Error('Please enter a valid email address');
+      }
+
       const response = await axios.put(
         `${process.env.REACT_APP_BASE_URL}api/users/${user._id}`,
         formData,
@@ -255,11 +288,27 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
       );
 
       if (response.data.success) {
+        setSnackbarMessage('User updated successfully!');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
         onUserUpdated();
         handleClose();
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Error updating user');
+      let errorMessage = error.message;
+      
+      // Handle duplicate email error
+      if (error.response?.data?.message?.includes('duplicate') || 
+          error.response?.data?.message?.includes('already exists')) {
+        errorMessage = `The email "${formData.email}" is already associated with another user. Please use a different email address.`;
+      } else {
+        errorMessage = error.response?.data?.message || error.message || "Failed to update user. Please try again.";
+      }
+      
+      setError(errorMessage);
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }
@@ -283,6 +332,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!error && !formData.user_name}
             />
             <TextField
               label="Mobile Number"
@@ -291,6 +341,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!error && !formData.mobile_name}
             />
             <TextField
               label="Email"
@@ -300,6 +351,8 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!error && (!formData.email || error.includes('email'))}
+              helperText={error && error.includes('email') ? error : ''}
             />
             <TextField
               select
@@ -309,6 +362,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!error && !formData.roleId}
             >
               {roles.map((role) => (
                 <MenuItem key={role._id} value={role._id}>
@@ -341,6 +395,19 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
           </Button>
         </DialogActions>
       </form>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert 
+          onClose={() => setSnackbarOpen(false)} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 };
@@ -360,6 +427,8 @@ const UserManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
       const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -370,7 +439,7 @@ const UserManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      setError(error.response?.data?.message || 'Error fetching users');
+      setError(error.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -416,6 +485,8 @@ const UserManagement = () => {
   const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
       await axios.delete(`${process.env.REACT_APP_BASE_URL}api/users/${userToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -423,7 +494,7 @@ const UserManagement = () => {
       setUserToDelete(null);
       fetchUsers();
     } catch (error) {
-      setError(error.response?.data?.message || 'Error deleting user');
+      setError(error.response?.data?.message || "Failed to delete user. The user may have active leads assigned or may have already been deleted.");
     }
   };
 

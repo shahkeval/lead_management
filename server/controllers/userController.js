@@ -93,6 +93,7 @@ exports.updateUser = async (req, res) => {
         success: false,
         message: 'User not found'
       });
+
     }
 
     // If role is being updated, verify it exists

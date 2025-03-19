@@ -48,6 +48,8 @@ const LeadManagement = () => {
   const [leadToDelete, setLeadToDelete] = useState(null);
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   // Initial form state
   const initialFormState = {
@@ -64,9 +66,9 @@ const LeadManagement = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Authentication token missing.");
+      if (!token) throw new Error("Your session has expired. Please log in again.");
 
-      const visibleLeads = user?.role?.visibleLeads; // Assuming this is where you get the value
+      const visibleLeads = user?.role?.visibleLeads;
 
       const endpoint = visibleLeads === "All" 
         ? `${process.env.REACT_APP_BASE_URL}api/leads/get` 
@@ -78,7 +80,7 @@ const LeadManagement = () => {
 
       if (response.data.success) setLeads(response.data.leads);
     } catch (err) {
-      setError(err.response?.data?.message || "Error fetching leads");
+      setError(err.response?.data?.message || "Unable to fetch leads. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -87,7 +89,7 @@ const LeadManagement = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Authentication token missing.");
+      if (!token) throw new Error("Your session has expired. Please log in again.");
 
       const endpoint = user?.role?.roleName === "sales person" 
         ? `${process.env.REACT_APP_BASE_URL}api/users/get_persone_user` 
@@ -99,7 +101,7 @@ const LeadManagement = () => {
 
       if (response.data.success) setUsers(response.data.users);
     } catch (err) {
-      setError(err.response?.data?.message || "Error fetching users");
+      setError(err.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
     }
   };
 
@@ -145,13 +147,23 @@ const LeadManagement = () => {
   const confirmDeleteLead = async () => {
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`${process.env.REACT_APP_BASE_URL}api/leads/${leadToDelete}`, {
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}api/leads/${leadToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchLeads();
-      setOpenSnackbar(true);
+
+      if (response.data.success) {
+        setSnackbarMessage('Lead deleted successfully!');
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+        fetchLeads();
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Error deleting lead");
+      setError(err.response?.data?.message || "Failed to delete lead.");
+      setSnackbarMessage(err.response?.data?.message || "Failed to delete lead.");
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
     } finally {
       setOpenDeleteDialog(false);
     }
@@ -171,7 +183,14 @@ const LeadManagement = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Authentication token missing.");
+      if (!token) throw new Error("Your session has expired. Please log in again.");
+
+      // Validate required fields
+      const requiredFields = ['clientName', 'mobileNo', 'email', 'sourceOfInquiry', 'selectedUser'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      }
 
       const leadData = {
         emp_id: formData.selectedUser,
@@ -187,16 +206,22 @@ const LeadManagement = () => {
         await axios.put(`${process.env.REACT_APP_BASE_URL}api/leads/update/${selectedLead._id}`, leadData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        setSnackbarMessage('Lead updated successfully!');
       } else {
         await axios.post(`${process.env.REACT_APP_BASE_URL}api/leads/add`, leadData, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        setSnackbarMessage('Lead created successfully!');
       }
 
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
       setOpenForm(false);
       fetchLeads();
     } catch (err) {
-      setError(err.response?.data?.message || "Error saving lead");
+      setError(err.response?.data?.message || err.message || "Failed to save lead. Please try again.");
+      setSnackbarMessage(err.response?.data?.message || err.message || "Failed to save lead. Please try again.");
+      setSnackbarSeverity('error');
       setOpenSnackbar(true);
     }
   };
@@ -298,8 +323,12 @@ const LeadManagement = () => {
           autoHideDuration={6000}
           onClose={() => setOpenSnackbar(false)}
         >
-          <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-            Lead deleted successfully!
+          <Alert 
+            onClose={() => setOpenSnackbar(false)} 
+            severity={snackbarSeverity}
+            sx={{ width: '100%' }}
+          >
+            {snackbarMessage}
           </Alert>
         </Snackbar>
       </Box>
