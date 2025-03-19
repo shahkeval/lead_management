@@ -124,7 +124,7 @@ const ManageRights = () => {
       // If any selected modules don't exist in database
       if (missingModules.length > 0) {
         setMessage(`Error: The following modules are not available: ${missingModules.join(', ')}`);
-        await dispatch(fetchAllModules());
+        // await dispatch(fetchAllModules());
         return;
       }
 
@@ -137,7 +137,7 @@ const ManageRights = () => {
         setMessage('Rights updated successfully');
         await Promise.all([
           dispatch(fetchRoles()),
-          dispatch(fetchAllModules())
+          // dispatch(fetchAllModules())
         ]);
       } else {
         setMessage(result.message || 'Failed to update rights');
@@ -147,61 +147,61 @@ const ManageRights = () => {
       setMessage(error.response?.data?.message || 'Failed to update rights');
       await Promise.all([
         dispatch(fetchRoles()),
-        dispatch(fetchAllModules())
+        // dispatch(fetchAllModules())
       ]);
     }
   };
 
-  const handleAddModule = async () => {
-    try {
-      if (!newModule.moduleName || !newModule.action) {
-        setError('Module name and action are required');
-        return;
-      }
+  // const handleAddModule = async () => {
+  //   try {
+  //     if (!newModule.moduleName || !newModule.action) {
+  //       setError('Module name and action are required');
+  //       return;
+  //     }
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${process.env.REACT_APP_BASE_URL}api/modules`, {
-        moduleName: newModule.moduleName.trim(),
-        action: newModule.action,
-        parentId: newModule.parentId,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  //     const token = localStorage.getItem('token');
+  //     const response = await axios.post(`${process.env.REACT_APP_BASE_URL}api/modules`, {
+  //       moduleName: newModule.moduleName.trim(),
+  //       action: newModule.action,
+  //       parentId: newModule.parentId,
+  //     }, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
 
-      if (response.data.success) {
-        setSuccessMessage('Module added successfully');
-        setOpenSnackbar(true);
-        setOpenDialog(false);
-        setNewModule({ moduleName: '', action: '', parentId: '' });
-        dispatch(fetchAllModules());
-      } else {
-        setError(response.data.message || 'Failed to add module');
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Failed to add module');
-    }
-  };
+  //     if (response.data.success) {
+  //       setSuccessMessage('Module added successfully');
+  //       setOpenSnackbar(true);
+  //       setOpenDialog(false);
+  //       setNewModule({ moduleName: '', action: '', parentId: '' });
+  //       dispatch(fetchAllModules());
+  //     } else {
+  //       setError(response.data.message || 'Failed to add module');
+  //     }
+  //   } catch (error) {
+  //     setError(error.response?.data?.message || 'Failed to add module');
+  //   }
+  // };
 
-  const fetchModules = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/modules`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data.success) {
-        setModules(response.data.modules);
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Error fetching modules');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const fetchModules = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/modules`, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     if (response.data.success) {
+  //       setModules(response.data.modules);
+  //     }
+  //   } catch (error) {
+  //     setError(error.response?.data?.message || 'Error fetching modules');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    fetchModules();
-  }, []);
+  // useEffect(() => {
+  //   fetchModules();
+  // }, []);
 
   const handleModuleAdded = () => {
     dispatch(fetchAllModules());
