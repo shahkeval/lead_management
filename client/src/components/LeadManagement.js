@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { useSelector } from 'react-redux';
+import Breadcrumbs from './common/Breadcrumbs';
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
@@ -232,6 +233,7 @@ const LeadManagement = () => {
   return (
     <Box sx={{ p: 0 }}>
       <Box sx={{ p: 3 }}>
+      <Breadcrumbs/>
         <Typography variant="h4" sx={{ mb: 4 }}>
           Lead Management
         </Typography>

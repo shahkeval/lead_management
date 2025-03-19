@@ -23,6 +23,7 @@ import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 import Navbar from './Navbar';
 import { useSelector } from 'react-redux';
+import Breadcrumbs from './common/Breadcrumbs';
 
 // AddUserForm Component
 const AddUserForm = ({ open, handleClose, onUserAdded }) => {
@@ -438,6 +439,7 @@ const UserManagement = () => {
   return (
     <Box>
       <Box sx={{ p: 3 }}>
+        <Breadcrumbs />
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 

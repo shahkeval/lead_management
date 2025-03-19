@@ -25,6 +25,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddRoleForm from './roles/AddRoleForm';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import Breadcrumbs from './common/Breadcrumbs';
 
 
 const ManageRoles = () => {
@@ -133,6 +134,7 @@ const ManageRoles = () => {
   return (
     <Box>
       <Box sx={{ p: 3 }}>
+      <Breadcrumbs/>
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between', 

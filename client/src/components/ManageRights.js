@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
@@ -23,8 +23,10 @@ import {
   MenuItem,
   FormControlLabel,
 } from '@mui/material';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { updateRoleRights, fetchAllModules, fetchRoles } from '../redux/slices/roleSlice';
 import axios from 'axios';
+import Breadcrumbs from './common/Breadcrumbs';
 
 // AddModuleForm Component
 const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
@@ -323,6 +325,8 @@ const ManageRights = () => {
   return (
     <Box>
       <Box sx={{ p: 3 }}>
+        <Breadcrumbs />
+
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h4">
             Manage Rights - {role.roleName}

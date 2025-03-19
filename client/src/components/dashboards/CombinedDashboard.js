@@ -10,6 +10,7 @@ import {
     CardContent,
     CardActions,
 } from '@mui/material';
+import Breadcrumbs from '../common/Breadcrumbs';
 
 const CombinedDashboard = () => {
     const navigate = useNavigate();
@@ -48,6 +49,7 @@ const CombinedDashboard = () => {
                 <>
                     {user.role.roleName === 'Admin' && (
                         <Box sx={{ p: 3 }}>
+                            <Breadcrumbs/>
                             <Typography variant="h4" sx={{ mb: 4 }}>
                                 Admin Dashboard
                             </Typography>
