@@ -3,6 +3,9 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getMe } from './redux/slices/authSlice';
 import AppContent from './components/AppContent';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';  // theme
+import 'primereact/resources/primereact.min.css';                  // core css
+import 'primeicons/primeicons.css';  
 
 function App() {
     const dispatch = useDispatch();
