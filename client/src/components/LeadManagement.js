@@ -22,6 +22,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  TablePagination,
 } from "@mui/material";
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
@@ -70,6 +71,8 @@ const LeadManagement = () => {
     lead_status: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.EQUALS }] }
   });
   const [globalFilterValue, setGlobalFilterValue] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const filterMenuRef = useRef(null);
   const [activeFilter, setActiveFilter] = useState('');
   const filterOverlayRef = useRef(null);
@@ -566,6 +569,15 @@ const LeadManagement = () => {
     }
   };
 
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   return (
     <Box sx={{ p: 0 }}>
       <Box sx={{ p: 3 }}>
@@ -676,7 +688,7 @@ const LeadManagement = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filterLeads().map((lead) => (
+                filterLeads().slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((lead) => (
                   <TableRow key={lead._id}>
                     <TableCell>{lead.lead_id}</TableCell>
                     <TableCell>{lead.emp_id.user_name}</TableCell>
@@ -706,6 +718,16 @@ const LeadManagement = () => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filterLeads().length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
 
         <div 
           ref={filterOverlayRef}
