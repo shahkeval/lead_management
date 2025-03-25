@@ -65,7 +65,7 @@ const Login = () => {
       const result = await dispatch(login(formData)).unwrap();
       
       if (result.error) {
-        console.error('Login Error:', result.error);
+        // console.error('Login Error:', result.error);
         setEmailError('Login failed. Please check your credentials.');
         return;
       }
@@ -87,8 +87,7 @@ const Login = () => {
       }, 1000);
 
     } catch (error) {
-      console.error('Form submission error:', error);
-      setEmailError('An error occurred. Please try again later.');
+      setEmailError('incorrect credentials. Please try again later.');
     }
   };
 
