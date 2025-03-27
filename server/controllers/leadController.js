@@ -34,10 +34,45 @@ exports.createLead = async (req, res) => {
 
 exports.getLeads = async (req, res) => {
   try {
-    // Fetch only leads that are not deleted
-    const leads = await Lead.find({ isDeleted: false }).populate("emp_id", "user_name");
+    const { page = 1, limit = 10, ...filters } = req.query; // Destructure page, limit, and other filters
+    const query = { isDeleted: false }; // Start with the base query
 
-    res.json({ success: true, leads });
+    // Build query with filters using regex for "contains" matching
+    if (filters.client_name) {
+      query.client_name = { $regex: filters.client_name, $options: 'i' }; // Case-insensitive match
+    }
+    if (filters.client_mobile_number) {
+      query.client_mobile_number = { $regex: filters.client_mobile_number, $options: 'i' };
+    }
+    if (filters.company_name) {
+      query.company_name = { $regex: filters.company_name, $options: 'i' };
+    }
+    if (filters.lead_status) {
+      query.lead_status = { $regex: filters.lead_status, $options: 'i' };
+    }
+    if (filters.lead_id) {
+      query.lead_id = { $regex: filters.lead_id, $options: 'i' }; // New filter for Lead ID
+    }
+    if (filters.emp_id) {
+      query.emp_id = { $regex: filters.emp_id, $options: 'i' }; // New filter for Employee Name
+    }
+    if (filters.date_time) {
+      query.date_time = { $regex: filters.date_time, $options: 'i' }; // New filter for Date
+    }
+
+    const leads = await Lead.find(query)
+      .populate("emp_id", "user_name")
+      .limit(limit * 1) // Limit results
+      .skip((page - 1) * limit); // Pagination
+
+    const count = await Lead.countDocuments(query); // Count total documents
+
+    res.json({
+      success: true,
+      leads,
+      totalPages: Math.ceil(count / limit), // Calculate total pages
+      currentPage: page,
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -105,17 +140,28 @@ exports.get_persone_lead = async (req, res) => {
       return res.status(400).json({ success: false, message: "Authorization token missing", leads: [] });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Replace with actual secret key
-
-
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const userId = new mongoose.Types.ObjectId(decoded.id);
+    const { page = 1, limit = 10, ...filters } = req.query; // Destructure page, limit, and other filters
 
-    const leads = await Lead.find({ emp_id: userId , isDeleted : false}).populate("emp_id", "user_name");
+    const query = { emp_id: userId, isDeleted: false, ...filters }; // Build query with filters
 
-    res.json({ success: true, leads: leads || [] }); // Always return an array
+    const leads = await Lead.find(query)
+      .populate("emp_id", "user_name")
+      .limit(limit * 1) // Limit results
+      .skip((page - 1) * limit); // Pagination
+
+    const count = await Lead.countDocuments(query); // Count total documents
+
+    res.json({
+      success: true,
+      leads: leads || [],
+      totalPages: Math.ceil(count / limit), // Calculate total pages
+      currentPage: page,
+    });
   } catch (error) {
     console.error("Error fetching leads:", error);
-    res.status(500).json({ success: false, message: error.message, leads: [] }); // Always send an empty array
+    res.status(500).json({ success: false, message: error.message, leads: [] });
   }
 };
 
