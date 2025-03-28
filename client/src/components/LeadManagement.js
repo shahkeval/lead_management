@@ -118,7 +118,7 @@ const LeadManagement = () => {
   useEffect(() => {
     const loadData = async () => {
       await fetchUsers(); // Fetch users only once
-      await fetchLeads(); // Fetch leads only once
+      // await fetchLeads(); // Fetch leads only once
     };
     loadData();
   }, []); // Empty dependency array to run only on mount
@@ -297,6 +297,15 @@ const LeadManagement = () => {
   // Clear filters function
   const handleClearFilters = () => {
     setFilters({}); // Reset filters to empty object
+    setFormData({
+      clientName: '',
+      mobileNo: '',
+      email: '',
+      sourceOfInquiry: '',
+      leadStatus: 'Pending',
+      companyName: '',
+      selectedUser: '',
+    }); // Reset form data to initial state
     setCurrentPage(1); // Reset to first page when filters are cleared
   };
 
@@ -343,6 +352,7 @@ const LeadManagement = () => {
             variant="outlined"
             size="small"
             name="lead_id"
+            value={filters.lead_id || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />
@@ -352,6 +362,7 @@ const LeadManagement = () => {
             variant="outlined"
             size="small"
             name="emp_id"
+            value={filters.emp_id || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />
@@ -361,6 +372,7 @@ const LeadManagement = () => {
             variant="outlined"
             size="small"
             name="client_name"
+            value={filters.client_name || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />
@@ -369,22 +381,26 @@ const LeadManagement = () => {
             variant="outlined"
             size="small"
             name="client_mobile_number"
+            value={filters.client_mobile_number || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />
-               <TextField
-            label="Date (YYYY-MM-DD)"
-            variant="outlined"
-            size="small"
+          
+          {/* Date Picker Input */}
+          <input
+            type="date"
             name="date_time"
+            value={filters.date_time || ''}
             onChange={handleFilterChange}
-            sx={{ mr: 1 }}
+            style={{ marginRight: '8px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
           />
+
           <TextField
             label="Company Name"
             variant="outlined"
             size="small"
             name="company_name"
+            value={filters.company_name || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />
@@ -393,6 +409,7 @@ const LeadManagement = () => {
             variant="outlined"
             size="small"
             name="lead_status"
+            value={filters.lead_status || ''}
             onChange={handleFilterChange}
             sx={{ mr: 1 }}
           />

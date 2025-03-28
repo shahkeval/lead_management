@@ -1,6 +1,7 @@
 const Lead = require("../models/Lead");
 const jwt = require("jsonwebtoken");
 const mongoose = require('mongoose');
+const User = require("../models/User");
 
 exports.createLead = async (req, res) => {
   try {
@@ -53,11 +54,25 @@ exports.getLeads = async (req, res) => {
     if (filters.lead_id) {
       query.lead_id = { $regex: filters.lead_id, $options: 'i' }; // New filter for Lead ID
     }
+    
+    // Handle employee name filter
     if (filters.emp_id) {
-      query.emp_id = { $regex: filters.emp_id, $options: 'i' }; // New filter for Employee Name
+      const employee = await User.findOne({ user_name: { $regex: filters.emp_id, $options: 'i' } });
+      if (employee) {
+        query.emp_id = employee._id; // Set emp_id to the found employee's ID
+      } else {
+        query.emp_id = null; // If no employee found, set to null to exclude
+      }
     }
+
+    // Handle date filter
     if (filters.date_time) {
-      query.date_time = { $regex: filters.date_time, $options: 'i' }; // New filter for Date
+      const date = new Date(filters.date_time); // Convert string to Date object
+      if (!isNaN(date.getTime())) { // Check if the date is valid
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0)); // Start of the day
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999)); // End of the day
+        query.date_time = { $gte: startOfDay, $lt: endOfDay }; // Filter for the whole day
+      }
     }
 
     const leads = await Lead.find(query)
@@ -144,19 +159,70 @@ exports.get_persone_lead = async (req, res) => {
     const userId = new mongoose.Types.ObjectId(decoded.id);
     const { page = 1, limit = 10, ...filters } = req.query; // Destructure page, limit, and other filters
 
-    const query = { emp_id: userId, isDeleted: false, ...filters }; // Build query with filters
+    // Step 1: Find all leads for the logged-in user
+    const allLeads = await Lead.find({ emp_id: userId, isDeleted: false }).populate("emp_id", "user_name");
 
-    const leads = await Lead.find(query)
-      .populate("emp_id", "user_name")
-      .limit(limit * 1) // Limit results
-      .skip((page - 1) * limit); // Pagination
+    // Step 2: Apply filters to the in-memory leads
+    let filteredLeads = allLeads;
 
-    const count = await Lead.countDocuments(query); // Count total documents
+    // Build query with filters using regex for "contains" matching
+    if (filters.client_name) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.client_name.toLowerCase().includes(filters.client_name.toLowerCase())
+      );
+    }
+    if (filters.client_mobile_number) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.client_mobile_number.includes(filters.client_mobile_number)
+      );
+    }
+    if (filters.company_name) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.company_name.toLowerCase().includes(filters.company_name.toLowerCase())
+      );
+    }
+    if (filters.lead_status) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.lead_status.toLowerCase().includes(filters.lead_status.toLowerCase())
+      );
+    }
+    if (filters.lead_id) {
+      filteredLeads = filteredLeads.filter(lead => 
+        lead.lead_id.toLowerCase().includes(filters.lead_id.toLowerCase())
+      );
+    }
+    
+    // Handle employee name filter
+    if (filters.emp_id) {
+      const employee = await User.findOne({ user_name: { $regex: filters.emp_id, $options: 'i' } });
+      if (employee) {
+        filteredLeads = filteredLeads.filter(lead => 
+          lead.emp_id._id.equals(employee._id)
+        );
+      }
+    }
+
+    // Handle date filter
+    if (filters.date_time) {
+      const date = new Date(filters.date_time); // Convert string to Date object
+      if (!isNaN(date.getTime())) { // Check if the date is valid
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0)); // Start of the day
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999)); // End of the day
+        filteredLeads = filteredLeads.filter(lead => 
+          lead.date_time >= startOfDay && lead.date_time < endOfDay
+        );
+      }
+    }
+
+    // Step 3: Implement pagination
+    const totalLeads = filteredLeads.length; // Total leads after filtering
+    const totalPages = Math.ceil(totalLeads / limit); // Calculate total pages
+    const paginatedLeads = filteredLeads.slice((page - 1) * limit, page * limit); // Get leads for the current page
 
     res.json({
       success: true,
-      leads: leads || [],
-      totalPages: Math.ceil(count / limit), // Calculate total pages
+      leads: paginatedLeads,
+      totalPages: totalPages, // Calculate total pages
       currentPage: page,
     });
   } catch (error) {
