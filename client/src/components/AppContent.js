@@ -13,6 +13,8 @@ import LeadManagement from "./LeadManagement";
 import EditLead from "./EditLead";
 import LeadManagementUser from "./LeadManagementUser";
 import Layout from "./Layout";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from './ResetPassword';
 
 const AppContent = () => {
   const { user, token, loading } = useSelector((state) => state.auth);
@@ -57,7 +59,9 @@ const AppContent = () => {
   );
 
   return (
-    <Layout showNavbar={!["/login", "/register"].includes(location.pathname)}>
+    // <Layout showNavbar={!["/change-password/:token","/login", "/register", "/forgot-password"].includes(location.pathname)}>
+    <Layout showNavbar={["/unauthorized","/dashboard", "/admin/manage-roles", "/admin/manage-rights/:roleId","/admin/users","/leads"].includes(location.pathname)}>
+
       <Routes>
         {/* Public Routes */}
         <Route
@@ -81,6 +85,8 @@ const AppContent = () => {
           }
         />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/change-password/:token" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route

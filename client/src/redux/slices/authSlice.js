@@ -47,6 +47,27 @@ export const getMe = createAsyncThunk(
   }
 );
 
+// Define the sendPasswordResetEmail action
+export const sendPasswordResetEmail = createAsyncThunk(
+  'auth/sendPasswordResetEmail',
+  async ({ email }) => {
+    const response = await axios.post(`${process.env.REACT_APP_BASE_URL}api/auth/forgot-password`, { email });
+    return response.data;
+  }
+);
+
+// Define the changePassword action
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async ({ token, newPassword }) => {
+    const response = await axios.post(`${process.env.REACT_APP_BASE_URL}api/auth/reset-password`, {
+      token,
+      newPassword,
+    });
+    return response.data;
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
@@ -116,11 +137,17 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.user;
       })
-      .addCase(getMe.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-        state.user = null;
-        state.token = null;
+      .addCase(sendPasswordResetEmail.fulfilled, (state, action) => {
+        // Handle success
+      })
+      .addCase(sendPasswordResetEmail.rejected, (state, action) => {
+        // Handle error
+      })
+      .addCase(changePassword.fulfilled, (state, action) => {
+        // Handle success
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        // Handle error
       });
   },
 });
