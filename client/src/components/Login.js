@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { login, getMe } from '../redux/slices/authSlice';
+import { login } from '../redux/slices/authSlice';
 import {
   Box,
   TextField,
@@ -71,7 +71,7 @@ const Login = () => {
       }
 
       // Fetch user data after successful login
-      await dispatch(getMe()).unwrap();
+      // await dispatch(getMe()).unwrap();
 
       setSuccessMessage('Login successful!');
       setOpenSnackbar(true);
@@ -178,9 +178,9 @@ const Login = () => {
               Don't have an account? Sign up
             </RouterLink>
           </Box>
-          <Box textAlign="center" sx={{ mt: 2 }}>
-            <RouterLink to="/forgot-password" style={{ textDecoration: 'none', color: 'primary.main' }}>
-              Forgot Password?
+          <Box textAlign="center">
+            <RouterLink to="/register" style={{ textDecoration: 'none', color: 'primary.main' }}>
+              ForgotPassword!
             </RouterLink>
           </Box>
         </Box>

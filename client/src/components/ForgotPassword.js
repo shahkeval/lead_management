@@ -39,12 +39,8 @@ const ForgotPassword = () => {
       setEmail(''); // Clear the email input
       setEmailError(''); // Clear any previous error messages
     } catch (error) {
-      // Check if the error has a response and set the error message accordingly
-      if (error.response && error.response.data) {
-        setEmailError(error.response.data.message || 'Failed to send password reset email. Please try again.');
-      } else {
-        setEmailError('Failed to send password reset email. Please try again.');
-      }
+      // Display the error message from the backend
+      setEmailError(error.message || 'Failed to send password reset email. Please try again.');
     }
   };
 

@@ -10,38 +10,33 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
 
-const ResetPassword = () => {
-  const { token } = useParams(); // Get the token from the URL
+const ChangePassword = () => {
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirm password
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate that passwords match
+    // Validate that new passwords match
     if (newPassword !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+      setErrorMessage('New passwords do not match.');
       return;
     }
 
     try {
-      await dispatch(changePassword({ token, newPassword })).unwrap();
+      await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
       setSuccessMessage('Password changed successfully!');
       setOpenSnackbar(true);
+      setCurrentPassword('');
       setNewPassword('');
-      setConfirmPassword(''); // Clear confirm password
+      setConfirmPassword('');
       setErrorMessage('');
-
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
     } catch (error) {
       setErrorMessage('Failed to change password. Please try again.');
     }
@@ -65,7 +60,7 @@ const ResetPassword = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Reset Password
+          Change Password
         </Typography>
         {errorMessage && (
           <Alert severity="error" sx={{ width: '100%', mt: 2, mb: 2 }}>
@@ -87,6 +82,17 @@ const ResetPassword = () => {
             margin="normal"
             required
             fullWidth
+            id="currentPassword"
+            label="Current Password"
+            name="currentPassword"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
             id="newPassword"
             label="New Password"
             name="newPassword"
@@ -99,7 +105,7 @@ const ResetPassword = () => {
             required
             fullWidth
             id="confirmPassword"
-            label="Confirm Password"
+            label="Confirm New Password"
             name="confirmPassword"
             type="password"
             value={confirmPassword}
@@ -111,7 +117,7 @@ const ResetPassword = () => {
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
           >
-            Reset Password
+            Change Password
           </Button>
         </Box>
       </Box>
@@ -119,4 +125,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword;
+export default ChangePassword; // Ensure this is a default export

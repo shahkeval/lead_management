@@ -43,6 +43,10 @@ const CombinedDashboard = () => {
         },
     ];
 
+    const handleChangePassword = () => {
+        navigate('/change_password'); // Navigate to Change Password page
+    };
+
     return (
         <div>
             {user && user.role ? (
@@ -80,6 +84,15 @@ const CombinedDashboard = () => {
                                     )
                                 ))}
                             </Grid>
+
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={handleChangePassword}
+                                sx={{ mt: 3 }}
+                            >
+                                Change Password
+                            </Button>
                         </Box>
                     )}
                     {user.role.roleName === 'sales manager' && (

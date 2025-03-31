@@ -31,21 +31,21 @@ export const login = createAsyncThunk(
   }
 );
 
-export const getMe = createAsyncThunk(
-  'auth/getMe',
-  async (_, { rejectWithValue }) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    } catch (error) {
-      localStorage.removeItem('token');
-      return rejectWithValue(error.response?.data?.message || 'Failed to get user info');
-    }
-  }
-);
+// export const getMe = createAsyncThunk(
+//   'auth/getMe',
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const token = localStorage.getItem('token');
+//       const response = await axios.get(`${API_URL}/auth/me`, {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+//       return response.data;
+//     } catch (error) {
+//       localStorage.removeItem('token');
+//       return rejectWithValue(error.response?.data?.message || 'Failed to get user info');
+//     }
+//   }
+// );
 
 // Define the sendPasswordResetEmail action
 export const sendPasswordResetEmail = createAsyncThunk(
@@ -129,14 +129,14 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Login failed';
       })
-      .addCase(getMe.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(getMe.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload.user;
-      })
+      // .addCase(getMe.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(getMe.fulfilled, (state, action) => {
+      //   state.loading = false;
+      //   state.user = action.payload.user;
+      // })
       .addCase(sendPasswordResetEmail.fulfilled, (state, action) => {
         // Handle success
       })
