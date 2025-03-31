@@ -87,7 +87,7 @@ const Login = () => {
       }, 1000);
 
     } catch (error) {
-      setEmailError('incorrect credentials. Please try again later.');
+      setEmailError();
     }
   };
 

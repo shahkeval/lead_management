@@ -130,21 +130,26 @@ exports.getMe = async (req, res) => {
 };
 
 exports.forgotPassword = async (req, res) => {
+  console.log("1");
   const { email } = req.body;
+  console.log("2");
 
   try {
+    console.log("3");
     // Check if user exists
     const user = await User.findOne({ email });
+    console.log("4");
     if (!user) {
+      console.log("5");
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
+    console.log("6");
     // Generate a password reset token
     const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+    console.log("7");
     // Create a reset URL
     const resetUrl = `${process.env.FRONTEND_URL}/change-password/${resetToken}`;
-
+    console.log("8");
     // Send email with the reset link
     const transporter = nodemailer.createTransport({
       service: 'Gmail', // Use your email service
@@ -153,20 +158,23 @@ exports.forgotPassword = async (req, res) => {
         pass: process.env.EMAIL_PASS, // Your email password
       },
     });
-
+    console.log("9");
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
       subject: 'Password Reset Request',
       text: `You requested a password reset. Click the link to reset your password: ${resetUrl}`,
     };
-
+    console.log("10");
     await transporter.sendMail(mailOptions);
-
+    console.log("11");
     res.status(200).json({ success: true, message: 'Password reset link sent to your email!' });
+    console.log("12");
   } catch (error) {
     console.error('Error sending password reset email:', error);
+    console.log("13");
     res.status(500).json({ success: false, message: 'Error sending password reset email' });
+    console.log("14");
   }
 };
 
