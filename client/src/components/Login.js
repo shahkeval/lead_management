@@ -179,7 +179,7 @@ const Login = () => {
             </RouterLink>
           </Box>
           <Box textAlign="center">
-            <RouterLink to="/register" style={{ textDecoration: 'none', color: 'primary.main' }}>
+            <RouterLink to="/forgot-password" style={{ textDecoration: 'none', color: 'primary.main' }}>
               ForgotPassword!
             </RouterLink>
           </Box>
