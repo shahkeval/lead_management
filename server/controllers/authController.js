@@ -151,6 +151,8 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `${process.env.FRONTEND_URL}/change-password/${resetToken}`;
     console.log("8");
     // Send email with the reset link
+    console.log(process.env.EMAIL_USER);
+    console.log(process.env.EMAIL_PASS);
     const transporter = nodemailer.createTransport({
       service: 'Gmail', // Use your email service
       auth: {
@@ -159,6 +161,7 @@ exports.forgotPassword = async (req, res) => {
       },
     });
     console.log("9");
+    console.log(process.env.EMAIL_USER);
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
