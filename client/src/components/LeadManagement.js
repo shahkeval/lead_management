@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -26,6 +26,10 @@ import {
 import axios from "axios";
 import { useSelector } from 'react-redux';
 import Breadcrumbs from './common/Breadcrumbs';
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+} from 'material-react-table';
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
@@ -51,12 +55,16 @@ const LeadManagement = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(5); // Default items per page
-  const [filters, setFilters] = useState({}); // Filters for API
-  const [selectedDate, setSelectedDate] = useState(''); // State for date filter
+  // Add new state for table
+  const [columnFilters, setColumnFilters] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [sorting, setSorting] = useState([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+  const [rowCount, setRowCount] = useState(0);
+  const [isRefetching, setIsRefetching] = useState(false);
 
   // Initial form state
   const initialFormState = {
@@ -70,29 +78,43 @@ const LeadManagement = () => {
   };
 
   const fetchLeads = async () => {
-    setLoading(true);
+    if (!leads.length) {
+      setLoading(true);
+    } else {
+      setIsRefetching(true);
+    }
+
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Your session has expired. Please log in again.");
 
       const visibleLeads = user?.role?.visibleLeads;
-
       const endpoint = visibleLeads === "All" 
-        ? `${process.env.REACT_APP_BASE_URL}api/leads/get?page=${currentPage}&limit=${limit}&${new URLSearchParams(filters)}` 
-        : `${process.env.REACT_APP_BASE_URL}api/leads/get_persone_lead?page=${currentPage}&limit=${limit}&${new URLSearchParams(filters)}`;
+        ? `${process.env.REACT_APP_BASE_URL}api/leads/get`
+        : `${process.env.REACT_APP_BASE_URL}api/leads/get_persone_lead`;
 
-      const response = await axios.get(endpoint, {
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        filters: JSON.stringify(columnFilters),
+        globalFilter: globalFilter,
+        sorting: JSON.stringify(sorting),
+      });
+
+      const response = await axios.get(`${endpoint}?${queryParams}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
         setLeads(response.data.leads);
-        setTotalPages(response.data.totalPages); // Set total pages from response
+        setRowCount(response.data.totalCount);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to fetch leads. Please check your connection and try again.");
+      setError(err.response?.data?.message || "Unable to fetch leads.");
     } finally {
       setLoading(false);
+      setIsRefetching(false);
     }
   };
 
@@ -117,21 +139,21 @@ const LeadManagement = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchUsers(); // Fetch users only once
-      // await fetchLeads(); // Fetch leads only once
+      await fetchUsers();
+      // await fetchLeads();
     };
     loadData();
   }, []); // Empty dependency array to run only on mount
-
-  useEffect(() => {
-    fetchLeads(); // Fetch leads when currentPage, limit, or filters change
-  }, [currentPage, limit, filters]);
 
   useEffect(() => {
     if (users.length === 1 && !formData.selectedUser) {
       setFormData((prevData) => ({ ...prevData, selectedUser: users[0]._id }));
     }
   }, [users, formData.selectedUser]);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize, sorting]);
 
   const handleAddLead = () => {
     setSelectedLead(null);
@@ -269,45 +291,125 @@ const LeadManagement = () => {
     (m) => m.moduleName === "lead management" && m.action === "list"
   );
 
-  // Pagination handlers
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(prevPage => prevPage + 1);
-    }
-  };
+  // Define columns
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'lead_id',
+      header: 'Lead ID',
+    },
+    {
+      accessorKey: 'emp_id.user_name',
+      header: 'Employee Name',
+    },
+    {
+      accessorKey: 'client_name',
+      header: 'Client Name',
+    },
+    {
+      accessorKey: 'client_mobile_number',
+      header: 'Mobile No.',
+    },
+    {
+      accessorKey: 'date_time',
+      header: 'Date',
+      Cell: ({ cell }) => new Date(cell.getValue()).toLocaleDateString(),
+    },
+    {
+      accessorKey: 'company_name',
+      header: 'Company Name',
+    },
+    {
+      accessorKey: 'lead_status',
+      header: 'Status',
+      Cell: ({ cell }) => (
+        <div style={{
+          ...getStatusColor(cell.getValue()),
+          padding: '5px 10px',
+          borderRadius: '5px',
+          textAlign: 'center'
+        }}>
+          {cell.getValue()}
+        </div>
+      ),
+    },
+  ], []);
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(prevPage => prevPage - 1);
-    }
-  };
-
-  // Filter change handler
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
-  };
-
-  // Handle limit change
-  const handleLimitChange = (e) => {
-    setLimit(e.target.value);
-    setCurrentPage(1); // Reset to first page when limit changes
-  };
-
-  // Clear filters function
-  const handleClearFilters = () => {
-    setFilters({}); // Reset filters to empty object
-    setFormData({
-      clientName: '',
-      mobileNo: '',
-      email: '',
-      sourceOfInquiry: '',
-      leadStatus: 'Pending',
-      companyName: '',
-      selectedUser: '',
-    }); // Reset form data to initial state
-    setCurrentPage(1); // Reset to first page when filters are cleared
-  };
+  const table = useMaterialReactTable({
+    columns,
+    data: leads,
+    enableRowSelection: false,
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    muiToolbarAlertBannerProps: error
+      ? {
+          color: 'error',
+          children: error,
+        }
+      : undefined,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    rowCount,
+    state: {
+      columnFilters,
+      globalFilter,
+      isLoading: loading,
+      pagination,
+      showAlertBanner: Boolean(error),
+      showProgressBars: isRefetching,
+      sorting,
+    },
+    initialState: {
+      pagination: {
+        pageSize: 5,
+        pageIndex: 0,
+      },
+    },
+    muiTablePaginationProps: {
+      rowsPerPageOptions: [5, 10, 25],
+    },
+    renderTopToolbarCustomActions: () => (
+      canCreate && (
+        <Button variant="contained" onClick={handleAddLead}>
+          Add New Lead
+        </Button>
+      )
+    ),
+    enableRowActions: true,
+    renderRowActions: ({ row }) => (
+      <Box sx={{ display: 'flex', gap: '1rem' }}>
+        {canEdit && (
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={() => handleEditLead(row.original)}
+          >
+            Edit
+          </Button>
+        )}
+        {canDelete && (
+          <Button 
+            variant="outlined" 
+            color="error" 
+            size="small" 
+            onClick={() => handleDeleteClick(row.original._id)}
+          >
+            Delete
+          </Button>
+        )}
+      </Box>
+    ),
+    positionActionsColumn: 'last',
+    muiTableHeadCellProps: {
+      sx: {
+        '&:last-child': {
+          width: '150px',
+        },
+      },
+    },
+  });
 
   return (
     <Box sx={{ p: 0 }}>
@@ -317,182 +419,13 @@ const LeadManagement = () => {
           Lead Management
         </Typography>
         
-        {/* Flexbox for layout */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          {canCreate && (
-            <Button variant="contained" onClick={handleAddLead}>
-              Add New Lead
-            </Button>
-          )}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <FormControl variant="outlined" sx={{ minWidth: 120, mr: 2 }}>
-              <InputLabel>Records per page</InputLabel>
-              <Select
-                value={limit}
-                onChange={handleLimitChange}
-                label="Records per page"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }} // Custom styling
-              >
-                <MenuItem value={5}>5</MenuItem>
-                <MenuItem value={10}>10</MenuItem>
-                <MenuItem value={25}>25</MenuItem>
-              </Select>
-            </FormControl>
-            <Button variant="outlined" onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
-          </Box>
-        </Box>
-
-        {/* Filter Inputs */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          
-             <TextField
-            label="Lead ID"
-            variant="outlined"
-            size="small"
-            name="lead_id"
-            value={filters.lead_id || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-
-               <TextField
-            label="Employee Name"
-            variant="outlined"
-            size="small"
-            name="emp_id"
-            value={filters.emp_id || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-
-          <TextField
-            label="Client Name"
-            variant="outlined"
-            size="small"
-            name="client_name"
-            value={filters.client_name || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-          <TextField
-            label="Mobile No."
-            variant="outlined"
-            size="small"
-            name="client_mobile_number"
-            value={filters.client_mobile_number || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-          
-          {/* Date Picker Input */}
-          <input
-            type="date"
-            name="date_time"
-            value={filters.date_time || ''}
-            onChange={handleFilterChange}
-            style={{ marginRight: '8px', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-          />
-<div>
-          
-</div>
-          <TextField
-            label="Company Name"
-            variant="outlined"
-            size="small"
-            name="company_name"
-            value={filters.company_name || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-          <TextField
-            label="Lead Status"
-            variant="outlined"
-            size="small"
-            name="lead_status"
-            value={filters.lead_status || ''}
-            onChange={handleFilterChange}
-            sx={{ mr: 1 }}
-          />
-       
-     
-     
-        </Box>
-
-        {error && <Alert severity="error">{error}</Alert>}
-        
         {canList ? (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Lead ID</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Client Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Mobile No.</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Company Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  {(canEdit || canDelete) && <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead._id}>
-                    <TableCell>{lead.lead_id}</TableCell>
-                    <TableCell>{lead.emp_id.user_name}</TableCell>
-                    <TableCell>{lead.client_name}</TableCell>
-                    <TableCell>{lead.client_mobile_number}</TableCell>
-                    <TableCell>{new Date(lead.date_time).toLocaleDateString()}</TableCell>
-                    <TableCell>{lead.company_name}</TableCell>
-                    <TableCell>
-                      <div style={{
-                        ...getStatusColor(lead.lead_status),
-                        padding: '5px 10px',
-                        borderRadius: '5px',
-                        textAlign: 'center'
-                      }}>
-                        {lead.lead_status}
-                      </div>
-                    </TableCell>
-                    {(canEdit || canDelete) && (
-                      <TableCell>
-                        {canEdit && <Button variant="outlined" size='small' onClick={() => handleEditLead(lead)}>Edit</Button>}
-                        {canDelete && <Button variant="outlined" size='small' color="error" sx={{ ml: 1 }} onClick={() => handleDeleteClick(lead._id)}>Delete</Button>}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <MaterialReactTable table={table} />
         ) : (
           <Typography align="center" color="error">
             You do not have rights to see the list of leads.
           </Typography>
         )}
-        
-        {/* Pagination Controls */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-          <Button onClick={handlePreviousPage} disabled={currentPage === 1}>Previous</Button>
-          <Typography>Page {currentPage} of {totalPages}</Typography>
-          <Button onClick={handleNextPage} disabled={currentPage === totalPages}>Next</Button>
-        </Box>
-
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={6000}
-          onClose={() => setOpenSnackbar(false)}
-        >
-          <Alert 
-            onClose={() => setOpenSnackbar(false)} 
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
-          >
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
       </Box>
 
       {/* Lead Form Dialog */}

@@ -35,64 +35,72 @@ exports.createLead = async (req, res) => {
 
 exports.getLeads = async (req, res) => {
   try {
-    const { page = 1, limit = 10, ...filters } = req.query; // Destructure page, limit, and other filters
-    const query = { isDeleted: false }; // Start with the base query
+    const { 
+      page = 1, 
+      limit = 10, 
+      filters, 
+      globalFilter,
+      sorting 
+    } = req.query;
 
-    // Build query with filters using regex for "contains" matching
-    if (filters.client_name) {
-      query.client_name = { $regex: filters.client_name, $options: 'i' }; // Case-insensitive match
-    }
-    if (filters.client_mobile_number) {
-      query.client_mobile_number = { $regex: filters.client_mobile_number, $options: 'i' };
-    }
-    if (filters.company_name) {
-      query.company_name = { $regex: filters.company_name, $options: 'i' };
-    }
-    if (filters.lead_status) {
-      query.lead_status = { $regex: filters.lead_status, $options: 'i' };
-    }
-    if (filters.lead_id) {
-      query.lead_id = { $regex: filters.lead_id, $options: 'i' }; // New filter for Lead ID
-    }
-    
-    // Handle employee name filter
-    if (filters.emp_id) {
-      const employee = await User.findOne({ user_name: { $regex: filters.emp_id, $options: 'i' } });
-      if (employee) {
-        query.emp_id = employee._id; // Set emp_id to the found employee's ID
+    // Parse the filters and sorting
+    const parsedFilters = filters ? JSON.parse(filters) : [];
+    const parsedSorting = sorting ? JSON.parse(sorting) : [];
+
+    // Build the query
+    let query = { isDeleted: false };
+
+    // Apply column filters
+    for (const filter of parsedFilters) {
+      if (filter.id === 'emp_id.user_name') {
+        // Handle employee name filter separately
+        const employees = await User.find({ 
+          user_name: { $regex: filter.value, $options: 'i' } 
+        });
+        const employeeIds = employees.map(emp => emp._id);
+        query['emp_id'] = { $in: employeeIds };
       } else {
-        query.emp_id = null; // If no employee found, set to null to exclude
+        query[filter.id] = { $regex: filter.value, $options: 'i' };
       }
     }
 
-    // Handle date filter
-    if (filters.date_time) {
-      const date = new Date(filters.date_time); // Convert string to Date object
-      if (!isNaN(date.getTime())) { // Check if the date is valid
-        const startOfDay = new Date(date.setHours(0, 0, 0, 0)); // Start of the day
-        const endOfDay = new Date(date.setHours(23, 59, 59, 999)); // End of the day
-        query.date_time = { $gte: startOfDay, $lt: endOfDay }; // Filter for the whole day
-      }
+    // Apply global filter
+    if (globalFilter) {
+      query.$or = [
+        { lead_id: { $regex: globalFilter, $options: 'i' } },
+        { client_name: { $regex: globalFilter, $options: 'i' } },
+        { client_mobile_number: { $regex: globalFilter, $options: 'i' } },
+        { company_name: { $regex: globalFilter, $options: 'i' } },
+        { lead_status: { $regex: globalFilter, $options: 'i' } },
+      ];
+    }
+
+    // Build sort options
+    const sortOptions = {};
+    if (parsedSorting.length > 0) {
+      sortOptions[parsedSorting[0].id] = parsedSorting[0].desc ? -1 : 1;
     }
 
     const leads = await Lead.find(query)
       .populate("emp_id", "user_name")
-      .limit(limit * 1) // Limit results
-      .skip((page - 1) * limit); // Pagination
+      .sort(sortOptions)
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
 
-    const count = await Lead.countDocuments(query); // Count total documents
+    const totalCount = await Lead.countDocuments(query);
 
     res.json({
       success: true,
       leads,
-      totalPages: Math.ceil(count / limit), // Calculate total pages
+      totalCount,
+      totalPages: Math.ceil(totalCount / limit),
       currentPage: page,
     });
   } catch (error) {
+    console.error('Error in getLeads:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 exports.updateLead = async (req, res) => {
   try {
@@ -146,7 +154,6 @@ exports.getLead = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
 
 exports.get_persone_lead = async (req, res) => {
   try {

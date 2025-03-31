@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -25,6 +25,10 @@ import axios from 'axios';
 import Navbar from './Navbar';
 import { useSelector } from 'react-redux';
 import Breadcrumbs from './common/Breadcrumbs';
+import {
+  MaterialReactTable,
+  useMaterialReactTable,
+} from 'material-react-table';
 
 // AddUserForm Component
 const AddUserForm = ({ open, handleClose, onUserAdded }) => {
@@ -423,35 +427,192 @@ const UserManagement = () => {
   const [openAddForm, setOpenAddForm] = useState(false);
   const { user } = useSelector((state) => state.auth); // Get the logged-in user
 
+  // Add new state for table
+  const [columnFilters, setColumnFilters] = useState([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [sorting, setSorting] = useState([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 5,
+  });
+  const [rowCount, setRowCount] = useState(0);
+  const [isRefetching, setIsRefetching] = useState(false);
+
   const fetchUsers = async () => {
-    setLoading(true);
+    if (!users.length) {
+      setLoading(true);
+    } else {
+      setIsRefetching(true);
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error("Your session has expired. Please log in again.");
 
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: pagination.pageIndex + 1,
+        limit: pagination.pageSize,
+        filters: JSON.stringify(columnFilters),
+        globalFilter: globalFilter,
+        sorting: JSON.stringify(sorting),
       });
+
+      const response = await axios.get(
+        `${process.env.REACT_APP_BASE_URL}api/users/list?${queryParams}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       if (response.data.success) {
         setUsers(response.data.users);
+        setRowCount(response.data.totalCount);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
       setError(error.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
     } finally {
       setLoading(false);
+      setIsRefetching(false);
     }
   };
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize, sorting]);
 
-  const handleAddUser = () => {
-    setOpenAddForm(true);
-  };
+  // Define columns
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'user_name',
+      header: 'User Name',
+    },
+    {
+      accessorKey: 'email',
+      header: 'Email',
+    },
+    {
+      accessorKey: 'mobile_name',
+      header: 'Mobile Number',
+    },
+    {
+      accessorKey: 'role.roleName',
+      header: 'Role',
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      Cell: ({ cell }) => (
+        <Chip 
+          label={cell.getValue()} 
+          variant="outlined"
+          size="small"
+          sx={{
+            borderColor: cell.getValue() === 'Active' ? '#4caf50' : '#f44336',
+            color: cell.getValue() === 'Active' ? '#4caf50' : '#f44336',
+            backgroundColor: cell.getValue() === 'Active' 
+              ? 'rgba(76, 175, 80, 0.08)'
+              : 'rgba(244, 67, 54, 0.08)',
+            '& .MuiChip-label': {
+              fontWeight: 500
+            }
+          }}
+        />
+      ),
+    },
+  ], []);
+
+  const table = useMaterialReactTable({
+    columns,
+    data: users,
+    enableRowSelection: false,
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    muiToolbarAlertBannerProps: error
+      ? {
+          color: 'error',
+          children: error,
+        }
+      : undefined,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    rowCount,
+    state: {
+      columnFilters,
+      globalFilter,
+      isLoading: loading,
+      pagination,
+      showAlertBanner: Boolean(error),
+      showProgressBars: isRefetching,
+      sorting,
+    },
+    initialState: {
+      pagination: {
+        pageSize: 5,
+        pageIndex: 0,
+      },
+    },
+    muiTablePaginationProps: {
+      rowsPerPageOptions: [5, 10, 25],
+    },
+    renderTopToolbarCustomActions: () => (
+      user.role.assignedModules.some(module => module.moduleName === 'user management' && module.action === 'create') && (
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => setOpenAddForm(true)}
+          sx={{
+            backgroundColor: '#1976d2',
+            color: 'white',
+            '&:hover': {
+              backgroundColor: '#1565c0',
+            },
+            textTransform: 'none',
+            borderRadius: '4px',
+            padding: '8px 16px',
+            height: '36px'
+          }}
+        >
+          Add New User
+        </Button>
+      )
+    ),
+    enableRowActions: true,
+    renderRowActions: ({ row }) => (
+      <Box sx={{ display: 'flex', gap: '1rem' }}>
+        {user.role.assignedModules.some(module => module.moduleName === 'user management' && module.action === 'update') && (
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={() => {
+              setEditUser(row.original);
+              setOpenEditForm(true);
+            }}
+          >
+            Edit
+          </Button>
+        )}
+        {user.role.assignedModules.some(module => module.moduleName === 'user management' && module.action === 'delete') && (
+          <Button 
+            variant="outlined" 
+            color="error" 
+            size="small" 
+            onClick={() => {
+              setUserToDelete(row.original);
+              setOpenDeleteDialog(true);
+            }}
+          >
+            Delete
+          </Button>
+        )}
+      </Box>
+    ),
+    positionActionsColumn: 'last',
+  });
 
   const handleCloseAddForm = () => {
     setOpenAddForm(false);
@@ -460,11 +621,6 @@ const UserManagement = () => {
   const handleUserAdded = () => {
     fetchUsers();
     handleCloseAddForm();
-  };
-
-  const handleEditUser = (user) => {
-    setEditUser(user);
-    setOpenEditForm(true);
   };
 
   const handleCloseEditForm = () => {
@@ -511,156 +667,17 @@ const UserManagement = () => {
     <Box>
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          mb: 3 
-        }}>
-          <Typography variant="h4" style={{ fontSize: '2rem' }}>
-            User Management
+        <Typography variant="h4" sx={{ mb: 4 }}>
+          User Management
+        </Typography>
+        
+        {canList ? (
+          <MaterialReactTable table={table} />
+        ) : (
+          <Typography align="center" color="error">
+            You do not have rights to see the list of users.
           </Typography>
-          {canCreate && (
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<AddIcon />}
-              onClick={handleAddUser}
-              sx={{
-                backgroundColor: '#1976d2',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#1565c0',
-                },
-                textTransform: 'none',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                height: '36px'
-              }}
-            >
-              Add New User
-            </Button>
-          )}
-        </Box>
-
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
         )}
-
-        <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>User Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Mobile Number</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                {showActionsHeader && <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>}
-              </TableRow>
-            </TableHead>
-            {canList ? (
-              <TableBody>
-                {!loading && users && users.length > 0 ? (
-                  users.map((user) => (
-                    <TableRow 
-                      key={user._id}
-                      sx={{
-                        backgroundColor: user.status === 'Inactive' ? '#f5f5f5' : 'inherit',
-                        '&:hover': {
-                          backgroundColor: user.status === 'Inactive' ? '#eeeeee' : '#f5f5f5'
-                        }
-                      }}
-                    >
-                      <TableCell sx={{
-                        color: user.status === 'Inactive' ? '#666666' : 'inherit'
-                      }}>
-                        {user.user_name}
-                      </TableCell>
-                      <TableCell sx={{
-                        color: user.status === 'Inactive' ? '#666666' : 'inherit'
-                      }}>
-                        {user.email}
-                      </TableCell>
-                      <TableCell sx={{
-                        color: user.status === 'Inactive' ? '#666666' : 'inherit'
-                      }}>
-                        {user.mobile_name}
-                      </TableCell>
-                      <TableCell sx={{
-                        color: user.status === 'Inactive' ? '#666666' : 'inherit'
-                      }}>
-                        {user.role?.roleName}
-                      </TableCell>
-                      <TableCell>
-                        <Chip 
-                          label={user.status} 
-                          variant="outlined"
-                          size="small"
-                          sx={{
-                            borderColor: user.status === 'Active' ? '#4caf50' : '#f44336',
-                            color: user.status === 'Active' ? '#4caf50' : '#f44336',
-                            backgroundColor: user.status === 'Active' 
-                              ? 'rgba(76, 175, 80, 0.08)'
-                              : 'rgba(244, 67, 54, 0.08)',
-                            '& .MuiChip-label': {
-                              fontWeight: 500
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          {canEdit && (
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleEditUser(user)}
-                              sx={{
-                                opacity: user.status === 'Inactive' ? 0.7 : 1
-                              }}
-                            >
-                              Edit
-                            </Button>
-                          )}
-                          {canDelete && (
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              color="error"
-                              onClick={() => handleDeleteClick(user)}
-                              sx={{
-                                opacity: user.status === 'Inactive' ? 0.7 : 1
-                              }}
-                            >
-                              Delete
-                            </Button>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      {loading ? 'Loading...' : 'No users found'}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            ) : (
-              <TableBody>
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    You do not have rights to see the list of users.
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            )}
-          </Table>
-        </TableContainer>
       </Box>
 
       {/* Edit Form Dialog */}

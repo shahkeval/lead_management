@@ -6,17 +6,64 @@ const jwt = require("jsonwebtoken");
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find()
-      // .populate('role')
-      .select('-password')
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    let query = {};
     
-      res.json({
+    // Handle filters
+    if (req.query.filters) {
+      const filters = JSON.parse(req.query.filters);
+      filters.forEach(filter => {
+        if (filter.id === 'role.roleName') {
+          query['role.roleName'] = new RegExp(filter.value, 'i');
+        } else {
+          query[filter.id] = new RegExp(filter.value, 'i');
+        }
+      });
+    }
+
+    // Handle global filter
+    if (req.query.globalFilter) {
+      const globalSearch = new RegExp(req.query.globalFilter, 'i');
+      query.$or = [
+        { user_name: globalSearch },
+        { email: globalSearch },
+        { mobile_name: globalSearch },
+        { status: globalSearch }
+      ];
+    }
+
+    // Handle sorting
+    let sort = {};
+    if (req.query.sorting) {
+      const sortParams = JSON.parse(req.query.sorting);
+      sortParams.forEach(param => {
+        sort[param.id] = param.desc ? -1 : 1;
+      });
+    }
+
+    const users = await User.find(query)
+      .populate('role')
+      .select('-password')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit);
+
+    const totalCount = await User.countDocuments(query);
+
+    res.json({
       success: true,
-      users
+      users,
+      totalCount
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ success: false, message: error.message || 'Error fetching users' });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Error fetching users' 
+    });
   }
 };
 exports.getForLead = async(req,res)=>{
