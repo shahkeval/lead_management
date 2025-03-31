@@ -7,10 +7,10 @@ const jwt = require("jsonwebtoken");
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.find()
-      .populate('role')
-      .select('-password');
-
-    res.json({
+      // .populate('role')
+      .select('-password')
+    
+      res.json({
       success: true,
       users
     });

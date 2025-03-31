@@ -61,7 +61,7 @@ const AppContent = () => {
 
   return (
     // <Layout showNavbar={!["/change-password/:token","/login", "/register", "/forgot-password"].includes(location.pathname)}>
-    <Layout showNavbar={["/unauthorized","/dashboard", "/admin/manage-roles", "/change_password","/admin/manage-rights/:roleId","/admin/users","/leads"].includes(location.pathname)}>
+    <Layout showNavbar={["/admin/manage-rights/:roleId","/unauthorized","/dashboard", "/admin/manage-roles", "/change_password","/admin/users","/leads"].includes(location.pathname)}>
 
       <Routes>
         {/* Public Routes */}

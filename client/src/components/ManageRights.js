@@ -27,6 +27,7 @@ import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { updateRoleRights, fetchAllModules, fetchRoles } from '../redux/slices/roleSlice';
 import axios from 'axios';
 import Breadcrumbs from './common/Breadcrumbs';
+import Navbar from './Navbar';
 
 // AddModuleForm Component
 const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
@@ -336,6 +337,7 @@ const ManageRights = () => {
 
   return (
     <Box>
+      <Navbar/>
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
 
