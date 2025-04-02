@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { Snackbar, Alert } from '@mui/material';
 
 const AlertContext = createContext();
 
@@ -7,18 +8,22 @@ export const AlertProvider = ({ children }) => {
 
   const showError = (message) => {
     if (!message) return;
-    setAlerts(prev => [...prev, { type: 'error', message }]);
-    setTimeout(() => {
-      setAlerts(prev => prev.filter(alert => alert.message !== message));
-    }, 6000);
+    if (!alerts.some(alert => alert.message === message)) {
+      setAlerts(prev => [...prev, { type: 'error', message }]);
+      setTimeout(() => {
+        setAlerts(prev => prev.filter(alert => alert.message !== message));
+      }, 3000);
+    }
   };
 
   const showSuccess = (message) => {
     if (!message) return;
-    setAlerts(prev => [...prev, { type: 'success', message }]);
-    setTimeout(() => {
-      setAlerts(prev => prev.filter(alert => alert.message !== message));
-    }, 4000);
+    if (!alerts.some(alert => alert.message === message)) {
+      setAlerts(prev => [...prev, { type: 'success', message }]);
+      setTimeout(() => {
+        setAlerts(prev => prev.filter(alert => alert.message !== message));
+      }, 3000);
+    }
   };
 
   const clearAlerts = () => {
@@ -26,16 +31,39 @@ export const AlertProvider = ({ children }) => {
   };
 
   return (
-    <AlertContext.Provider value={{ alerts, showError, showSuccess, clearAlerts }}>
+    <AlertContext.Provider value={{ showSuccess, showError, clearAlerts, alerts }}>
       {children}
+      {alerts.map((alert, index) => (
+        <Snackbar
+          key={index}
+          open={true}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <Alert 
+            severity={alert.type} 
+            onClose={() => {
+              setAlerts(prev => prev.filter((_, i) => i !== index));
+            }}
+            sx={{ 
+              width: '100%',
+              ...(alert.type === 'success' && {
+                backgroundColor: '#2e7d32', // Darker green background
+                color: '#fff', // White text
+                '& .MuiAlert-icon': {
+                  color: '#fff' // White icon
+                },
+                '& .MuiAlert-action': {
+                  color: '#fff' // White close button
+                }
+              })
+            }}
+          >
+            {alert.message}
+          </Alert>
+        </Snackbar>
+      ))}
     </AlertContext.Provider>
   );
 };
 
-export const useAlerts = () => {
-  const context = useContext(AlertContext);
-  if (!context) {
-    throw new Error('useAlerts must be used within an AlertProvider');
-  }
-  return context;
-}; 
+export const useAlerts = () => useContext(AlertContext); 

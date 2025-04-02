@@ -10,28 +10,29 @@ import {
   Container,
   Alert,
   MenuItem,
-  Snackbar,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAlerts } from '../context/AlertContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
-    user_name: '',
-    mobile_name: '',
+    userName: '',
+    mobileName: '',
     role: 'sales person',
   });
 
-  const [successMessage, setSuccessMessage] = useState('');
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
-  const [emailError, setEmailError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    password: '',
+  });
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state) => state.auth);
+  const { showError, showSuccess } = useAlerts();
 
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -41,24 +42,27 @@ const Register = () => {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     
-    if (e.target.name === 'confirmPassword' || e.target.name === 'password') {
-      setPasswordError('');
-    }
+    // Clear field errors when user starts typing
     if (e.target.name === 'email') {
-      setEmailError('');
+      setFieldErrors(prev => ({ ...prev, email: '' }));
+    }
+    if (e.target.name === 'confirmPassword' || e.target.name === 'password') {
+      setFieldErrors(prev => ({ ...prev, password: '' }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Validate email
     if (!validateEmail(formData.email)) {
-      setEmailError('Please enter a valid email address');
+      setFieldErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
       return;
     }
 
+    // Validate password match
     if (formData.password !== formData.confirmPassword) {
-      setPasswordError("Passwords don't match");
+      setFieldErrors(prev => ({ ...prev, password: "Passwords don't match" }));
       return;
     }
 
@@ -66,18 +70,17 @@ const Register = () => {
       const result = await dispatch(register(formData));
       
       if (result.error) {
+        showError(result.error.message || "Registration failed. Please try again.");
         return;
       }
 
-      setSuccessMessage('Registration successful! Redirecting to login...');
-      setOpenSnackbar(true);
-
+      showSuccess('Registration successful! Redirecting to login...');
       setFormData({
         email: '',
         password: '',
         confirmPassword: '',
-        user_name: '',
-        mobile_name: '',
+        userName: '',
+        mobileName: '',
         role: 'sales person',
       });
 
@@ -87,14 +90,8 @@ const Register = () => {
 
     } catch (error) {
       console.error('Registration error:', error);
+      showError("Unable to register. Please try again later.");
     }
-  };
-
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setOpenSnackbar(false);
   };
 
   return (
@@ -112,7 +109,7 @@ const Register = () => {
         </Typography>
 
         {/* Error Alerts */}
-        {(error || passwordError || emailError) && (
+        {(error || fieldErrors.password || fieldErrors.email) && (
           <Alert 
             severity="error" 
             sx={{ 
@@ -121,45 +118,29 @@ const Register = () => {
               mb: 2 
             }}
           >
-            {error || passwordError || emailError}
+            {error || fieldErrors.password || fieldErrors.email}
           </Alert>
         )}
-
-        {/* Success Snackbar */}
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={3000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={handleSnackbarClose} 
-            severity="success" 
-            sx={{ width: '100%' }}
-          >
-            {successMessage}
-          </Alert>
-        </Snackbar>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"
             required
             fullWidth
-            id="user_name"
+            id="userName"
             label="User Name"
-            name="user_name"
-            value={formData.user_name}
+            name="userName"
+            value={formData.userName}
             onChange={handleChange}
           />
           <TextField
             margin="normal"
             required
             fullWidth
-            id="mobile_name"
+            id="mobileName"
             label="Mobile Number"
-            name="mobile_name"
-            value={formData.mobile_name}
+            name="mobileName"
+            value={formData.mobileName}
             onChange={handleChange}
           />
           <TextField
@@ -172,8 +153,8 @@ const Register = () => {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            error={!!emailError}
-            helperText={emailError}
+            error={!!fieldErrors.email}
+            helperText={fieldErrors.email}
           />
           <TextField
             margin="normal"

@@ -6,24 +6,24 @@ const User = require("../models/User");
 exports.createLead = async (req, res) => {
   try {
     const {
-      emp_id,
-      client_name,
-      client_mobile_number,
-      client_email,
-      source_of_inquiry,
-      lead_status,
-      company_name,
+      empId,
+      clientName,
+      clientMobileNumber,
+      clientEmail,
+      sourceOfInquiry,
+      leadStatus,
+      companyName,
     } = req.body;
     const { lead_id } = req.params;
 
     const newLead = new Lead({
-      emp_id,
-      client_name,
-      client_mobile_number,
-      client_email,
-      source_of_inquiry,
-      lead_status,
-      company_name,
+      empId,
+      clientName,
+      clientMobileNumber,
+      clientEmail,
+      sourceOfInquiry,
+      leadStatus,
+      companyName,
     });
 
     await newLead.save();
@@ -52,13 +52,13 @@ exports.getLeads = async (req, res) => {
 
     // Apply column filters
     for (const filter of parsedFilters) {
-      if (filter.id === 'emp_id.user_name') {
+      if (filter.id === 'empId.userName') {
         // Handle employee name filter separately
         const employees = await User.find({ 
-          user_name: { $regex: filter.value, $options: 'i' } 
+          userName: { $regex: filter.value, $options: 'i' } 
         });
         const employeeIds = employees.map(emp => emp._id);
-        query['emp_id'] = { $in: employeeIds };
+        query['empId'] = { $in: employeeIds };
       } else {
         query[filter.id] = { $regex: filter.value, $options: 'i' };
       }
@@ -68,19 +68,19 @@ exports.getLeads = async (req, res) => {
     if (globalFilter) {
       // Find employees whose names match the global filter
       const employees = await User.find({
-        user_name: { $regex: globalFilter, $options: 'i' }
+        userName: { $regex: globalFilter, $options: 'i' }
       });
       const employeeIds = employees.map(emp => emp._id);
 
       query.$or = [
-        { lead_id: { $regex: globalFilter, $options: 'i' } },
-        { client_name: { $regex: globalFilter, $options: 'i' } },
-        { client_mobile_number: { $regex: globalFilter, $options: 'i' } },
-        { client_email: { $regex: globalFilter, $options: 'i' } },
-        { company_name: { $regex: globalFilter, $options: 'i' } },
-        { source_of_inquiry: { $regex: globalFilter, $options: 'i' } },
-        { lead_status: { $regex: globalFilter, $options: 'i' } },
-        { emp_id: { $in: employeeIds } }, // Search by employee name
+        { leadId: { $regex: globalFilter, $options: 'i' } },
+        { clientName: { $regex: globalFilter, $options: 'i' } },
+        { clientMobileNumber: { $regex: globalFilter, $options: 'i' } },
+        { clientEmail: { $regex: globalFilter, $options: 'i' } },
+        { companyName: { $regex: globalFilter, $options: 'i' } },
+        { sourceOfInquiry: { $regex: globalFilter, $options: 'i' } },
+        { leadStatus: { $regex: globalFilter, $options: 'i' } },
+        { empId: { $in: employeeIds } }, // Search by employee name
       ];
 
       // Add date search if the globalFilter is a valid date
@@ -104,7 +104,7 @@ exports.getLeads = async (req, res) => {
     }
 
     const leads = await Lead.find(query)
-      .populate("emp_id", "user_name")
+      .populate("empId", "userName")
       .sort(sortOptions)
       .limit(limit * 1)
       .skip((page - 1) * limit);
@@ -126,8 +126,8 @@ exports.getLeads = async (req, res) => {
 
 exports.updateLead = async (req, res) => {
   try {
-    const { lead_id } = req.params;
-    const updatedLead = await Lead.findByIdAndUpdate(lead_id, req.body, {
+    const { leadId } = req.params;
+    const updatedLead = await Lead.findByIdAndUpdate(leadId, req.body, {
       new: true,
     });
     if (!updatedLead) {
@@ -143,8 +143,8 @@ exports.updateLead = async (req, res) => {
 
 exports.deleteLead = async (req, res) => {
   try {
-    const { lead_id } = req.params;
-    const find_lead = await Lead.findById(lead_id);
+    const { leadId } = req.params;
+    const find_lead = await Lead.findById(leadId);
     
     if (!find_lead) {
       return res.status(404).json({ success: false, message: "Lead not found" });
@@ -162,10 +162,10 @@ exports.deleteLead = async (req, res) => {
 
 exports.getLead = async (req, res) => {
   try {
-    const { lead_id } = req.params;
+    const { leadId } = req.params;
 
     // Correct query to ensure only non-deleted leads are fetched
-    const lead = await Lead.findOne({ _id: lead_id, isDeleted: false }).populate("emp_id");
+    const lead = await Lead.findOne({ _id: leadId, isDeleted: false }).populate("empId");
 
     if (!lead) {
       return res.status(404).json({ success: false, message: "Lead not found" });
@@ -189,56 +189,56 @@ exports.get_persone_lead = async (req, res) => {
     const { page = 1, limit = 10, ...filters } = req.query; // Destructure page, limit, and other filters
 
     // Step 1: Find all leads for the logged-in user
-    const allLeads = await Lead.find({ emp_id: userId, isDeleted: false }).populate("emp_id", "user_name");
+    const allLeads = await Lead.find({ empId: userId, isDeleted: false }).populate("empId", "userName");
 
     // Step 2: Apply filters to the in-memory leads
     let filteredLeads = allLeads;
 
     // Build query with filters using regex for "contains" matching
-    if (filters.client_name) {
+    if (filters.clientName) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.client_name.toLowerCase().includes(filters.client_name.toLowerCase())
+        lead.clientName.toLowerCase().includes(filters.clientName.toLowerCase())
       );
     }
-    if (filters.client_mobile_number) {
+    if (filters.clientMobileNumber) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.client_mobile_number.includes(filters.client_mobile_number)
+        lead.clientMobileNumber.includes(filters.clientMobileNumber)
       );
     }
-    if (filters.company_name) {
+    if (filters.companyname) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.company_name.toLowerCase().includes(filters.company_name.toLowerCase())
+        lead.companyName.toLowerCase().includes(filters.companyName.toLowerCase())
       );
     }
-    if (filters.lead_status) {
+    if (filters.leadStatus) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.lead_status.toLowerCase().includes(filters.lead_status.toLowerCase())
+        lead.leadStatus.toLowerCase().includes(filters.leadStatus.toLowerCase())
       );
     }
-    if (filters.lead_id) {
+    if (filters.leadId) {
       filteredLeads = filteredLeads.filter(lead => 
-        lead.lead_id.toLowerCase().includes(filters.lead_id.toLowerCase())
+        lead.leadId.toLowerCase().includes(filters.leadId.toLowerCase())
       );
     }
     
     // Handle employee name filter
-    if (filters.emp_id) {
-      const employee = await User.findOne({ user_name: { $regex: filters.emp_id, $options: 'i' } });
+    if (filters.empId) {
+      const employee = await User.findOne({ userName: { $regex: filters.empId, $options: 'i' } });
       if (employee) {
         filteredLeads = filteredLeads.filter(lead => 
-          lead.emp_id._id.equals(employee._id)
+          lead.empId._id.equals(employee._id)
         );
       }
     }
 
     // Handle date filter
-    if (filters.date_time) {
-      const date = new Date(filters.date_time); // Convert string to Date object
+    if (filters.dateTime) {
+      const date = new Date(filters.dateTime); // Convert string to Date object
       if (!isNaN(date.getTime())) { // Check if the date is valid
         const startOfDay = new Date(date.setHours(0, 0, 0, 0)); // Start of the day
         const endOfDay = new Date(date.setHours(23, 59, 59, 999)); // End of the day
         filteredLeads = filteredLeads.filter(lead => 
-          lead.date_time >= startOfDay && lead.date_time < endOfDay
+          lead.dateTime >= startOfDay && lead.dateTime < endOfDay
         );
       }
     }
@@ -259,4 +259,3 @@ exports.get_persone_lead = async (req, res) => {
     res.status(500).json({ success: false, message: error.message, leads: [] });
   }
 };
-

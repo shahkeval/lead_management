@@ -7,7 +7,7 @@ const moduleSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['create', 'update', 'list', 'view', 'delete','parent'],
+    enum: ['create', 'update', 'list', 'view', 'delete', 'parent'],
     required: true
   },
   parentId: {

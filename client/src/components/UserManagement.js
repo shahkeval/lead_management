@@ -110,7 +110,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
 
       // Validate required fields
       const newFieldErrors = {};
-      const requiredFields = ['email', 'password', 'user_name', 'mobile_name', 'roleId'];
+      const requiredFields = ['email', 'password', 'userName', 'mobileName', 'roleId'];
       requiredFields.forEach(field => {
         if (!formData[field]) {
           newFieldErrors[field] = 'This field is required';
@@ -321,8 +321,8 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
     if (user) {
       setFormData({
         email: user.email,
-        user_name: user.user_name,
-        mobile_name: user.mobile_name,
+        user_name: user.userName,
+        mobile_name: user.mobileName,
         roleId: user.role._id,
         status: user.status
       });
@@ -362,7 +362,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
 
       // Validate required fields
       const newFieldErrors = {};
-      const requiredFields = ['email', 'user_name', 'mobile_name', 'roleId'];
+      const requiredFields = ['email', 'userName', 'mobileName', 'roleId'];
       requiredFields.forEach(field => {
         if (!formData[field]) {
           newFieldErrors[field] = 'This field is required';
@@ -600,7 +600,7 @@ const UserManagement = () => {
   // Define columns
   const columns = useMemo(() => [
     {
-      accessorKey: 'user_name',
+      accessorKey: 'userName',
       header: 'User Name',
     },
     {
@@ -608,7 +608,7 @@ const UserManagement = () => {
       header: 'Email',
     },
     {
-      accessorKey: 'mobile_name',
+      accessorKey: 'mobileName',
       header: 'Mobile Number',
     },
     {
@@ -645,26 +645,20 @@ const UserManagement = () => {
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    muiToolbarAlertBannerProps: tableError
-      ? {
-          color: 'error',
-          children: tableError,
-        }
-      : undefined,
-    onColumnFiltersChange: setColumnFilters,
-    onGlobalFilterChange: setGlobalFilter,
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    rowCount,
     state: {
       columnFilters,
       globalFilter,
       isLoading: loading,
       pagination,
-      showAlertBanner: Boolean(showError),
+      showAlertBanner: false,
       showProgressBars: isRefetching,
       sorting,
     },
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
+    onPaginationChange: setPagination,
+    onSortingChange: setSorting,
+    rowCount,
     initialState: {
       pagination: {
         pageSize: 5,

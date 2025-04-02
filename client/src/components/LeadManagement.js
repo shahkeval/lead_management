@@ -204,13 +204,13 @@ const LeadManagement = () => {
   const handleEditLead = (lead) => {
     setSelectedLead(lead);
     setFormData({
-      clientName: lead.client_name || "",
-      mobileNo: lead.client_mobile_number || "",
-      email: lead.client_email || "",
-      sourceOfInquiry: lead.source_of_inquiry || "",
-      leadStatus: lead.lead_status || "Pending",
-      companyName: lead.company_name || "",
-      selectedUser: lead.emp_id?._id || "",
+      clientName: lead.clientName || "",
+      mobileNo: lead.clientMobileNumber || "",
+      email: lead.clientEmail || "",
+      sourceOfInquiry: lead.sourceOfInquiry || "",
+      leadStatus: lead.leadStatus || "Pending",
+      companyName: lead.companyName || "",
+      selectedUser: lead.empId?._id || "",
     });
     setOpenForm(true);
   };
@@ -292,13 +292,13 @@ const LeadManagement = () => {
       }
 
       const leadData = {
-        emp_id: formData.selectedUser,
-        client_name: formData.clientName,
-        client_mobile_number: formData.mobileNo,
-        client_email: formData.email,
-        source_of_inquiry: formData.sourceOfInquiry,
-        lead_status: formData.leadStatus,
-        company_name: formData.companyName,
+        empId: formData.selectedUser,
+        clientName: formData.clientName,
+        clientMobileNumber: formData.mobileNo,
+        clientEmail: formData.email,
+        sourceOfInquiry: formData.sourceOfInquiry,
+        leadStatus: formData.leadStatus,
+        companyName: formData.companyName,
       };
 
       if (selectedLead) {
@@ -376,48 +376,48 @@ const LeadManagement = () => {
   // Define columns
   const columns = useMemo(() => [
     {
-      accessorKey: 'lead_id',
+      accessorKey: 'leadId',
       header: 'Lead ID',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'emp_id.user_name',
+      accessorKey: 'empId.userName',
       header: 'Employee Name',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'client_name',
+      accessorKey: 'clientName',
       header: 'Client Name',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'client_mobile_number',
+      accessorKey: 'clientMobileNumber',
       header: 'Mobile No.',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'client_email',
+      accessorKey: 'clientEmail',
       header: 'Email',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'date_time',
+      accessorKey: 'dateTime',
       header: 'Date',
       Cell: ({ cell }) => new Date(cell.getValue()).toLocaleDateString(),
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'company_name',
+      accessorKey: 'companyName',
       header: 'Company Name',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'source_of_inquiry',
+      accessorKey: 'sourceOfInquiry',
       header: 'Source',
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'lead_status',
+      accessorKey: 'leadStatus',
       header: 'Status',
       Cell: ({ cell }) => (
         <div style={{

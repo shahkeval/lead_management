@@ -59,31 +59,19 @@ const Login = () => {
     }
 
     try {
-      const result = await dispatch(login(formData)).unwrap();
+      const result = await dispatch(login(formData));
       
       if (result.error) {
-        // console.error('Login Error:', result.error);
-        showError('Login failed. Please check your credentials.');
+        showError(result.error.message || "Login failed. Please try again.");
         return;
       }
 
-      // Fetch user data after successful login
-      // await dispatch(getMe()).unwrap();
-
-      showSuccess('Login successful!');
-
-      setTimeout(() => {
-        // Check for stored path first
-        const lastPath = localStorage.getItem('lastPath');
-        if (lastPath) {
-          navigate(lastPath);
-        } else {
-          navigate('/dashboard'); // Redirect to the dashboard
-        }
-      }, 1000);
-
+      // Show success message and navigate
+      showSuccess('Login successful! Welcome back.');
+      navigate('/dashboard'); // Remove the state parameter
+      
     } catch (error) {
-      showError(error.response?.data?.message || 'Login failed. Please try again.');
+      showError("An error occurred during login. Please try again.");
     }
   };
 
