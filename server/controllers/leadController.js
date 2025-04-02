@@ -64,15 +64,37 @@ exports.getLeads = async (req, res) => {
       }
     }
 
-    // Apply global filter
+    // Apply global filter to search across all fields
     if (globalFilter) {
+      // Find employees whose names match the global filter
+      const employees = await User.find({
+        user_name: { $regex: globalFilter, $options: 'i' }
+      });
+      const employeeIds = employees.map(emp => emp._id);
+
       query.$or = [
         { lead_id: { $regex: globalFilter, $options: 'i' } },
         { client_name: { $regex: globalFilter, $options: 'i' } },
         { client_mobile_number: { $regex: globalFilter, $options: 'i' } },
+        { client_email: { $regex: globalFilter, $options: 'i' } },
         { company_name: { $regex: globalFilter, $options: 'i' } },
+        { source_of_inquiry: { $regex: globalFilter, $options: 'i' } },
         { lead_status: { $regex: globalFilter, $options: 'i' } },
+        { emp_id: { $in: employeeIds } }, // Search by employee name
       ];
+
+      // Add date search if the globalFilter is a valid date
+      const dateSearch = new Date(globalFilter);
+      if (!isNaN(dateSearch.getTime())) {
+        const startOfDay = new Date(dateSearch.setHours(0, 0, 0, 0));
+        const endOfDay = new Date(dateSearch.setHours(23, 59, 59, 999));
+        query.$or.push({
+          date_time: {
+            $gte: startOfDay,
+            $lte: endOfDay
+          }
+        });
+      }
     }
 
     // Build sort options

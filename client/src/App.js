@@ -6,6 +6,7 @@ import AppContent from './components/AppContent';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';  // theme
 import 'primereact/resources/primereact.min.css';                  // core css
 import 'primeicons/primeicons.css';  
+import { AlertProvider } from './context/AlertContext';
 
 function App() {
     const dispatch = useDispatch();
@@ -21,9 +22,11 @@ function App() {
     }, []);
 
     return (
-        <Router>
-            <AppContent />
-        </Router>
+        <AlertProvider>
+            <Router>
+                <AppContent />
+            </Router>
+        </AlertProvider>
     );
 }
 

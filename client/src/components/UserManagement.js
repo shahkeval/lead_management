@@ -29,6 +29,8 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
+import { useAlerts } from '../context/AlertContext';
+import GlobalAlerts from './common/GlobalAlerts';
 
 // AddUserForm Component
 const AddUserForm = ({ open, handleClose, onUserAdded }) => {
@@ -40,9 +42,16 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
     roleId: '',
     status: 'Active'
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    password: '',
+    user_name: '',
+    mobile_name: '',
+    roleId: ''
+  });
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { showError, showSuccess, clearAlerts } = useAlerts();
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -57,7 +66,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
         }
       } catch (error) {
         console.error('Error fetching roles:', error);
-        setError('Error fetching roles. Please try again.');
+        showError('Error fetching roles. Please try again.');
       }
     };
     
@@ -67,24 +76,57 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
   }, [open]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+    // Clear field error when user starts typing
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
+
+      // Reset field errors
+      setFieldErrors({
+        email: '',
+        password: '',
+        user_name: '',
+        mobile_name: '',
+        roleId: ''
+      });
 
       // Validate required fields
+      const newFieldErrors = {};
       const requiredFields = ['email', 'password', 'user_name', 'mobile_name', 'roleId'];
-      const missingFields = requiredFields.filter(field => !formData[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          newFieldErrors[field] = 'This field is required';
+        }
+      });
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (formData.email && !emailRegex.test(formData.email)) {
+        newFieldErrors.email = 'Please enter a valid email address';
+      }
+
+      // If there are field errors, show them and stop submission
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
+        return;
       }
 
       const response = await axios.post(
@@ -108,7 +150,18 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
         });
       }
     } catch (error) {
-      setError(error.response?.data?.message || error.message || "Failed to add user. Please try again.");
+      if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          email: 'This email is already registered'
+        }));
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to perform this action.");
+      } else {
+        showError("Unable to add user. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
@@ -117,13 +170,8 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add New User</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="User Name"
@@ -132,6 +180,11 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!fieldErrors.user_name}
+              helperText={fieldErrors.user_name}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               label="Mobile Number"
@@ -140,6 +193,11 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!fieldErrors.mobile_name}
+              helperText={fieldErrors.mobile_name}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               label="Email"
@@ -149,6 +207,11 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               label="Password"
@@ -158,6 +221,11 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               select
@@ -167,6 +235,11 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              error={!!fieldErrors.roleId}
+              helperText={fieldErrors.roleId}
+              inputProps={{ 
+                required: false 
+              }}
             >
               {roles.map((role) => (
                 <MenuItem key={role._id} value={role._id}>
@@ -182,6 +255,9 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
               onChange={handleChange}
               fullWidth
               required
+              inputProps={{ 
+                required: false 
+              }}
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
@@ -212,12 +288,15 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
     roleId: '',
     status: 'Active'
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    email: '',
+    user_name: '',
+    mobile_name: '',
+    roleId: ''
+  });
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('error');
+  const { showError, showSuccess, clearAlerts } = useAlerts();
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -231,10 +310,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
           setRoles(filter);
         }
       } catch (error) {
-        setError('Error fetching roles. Please try again.');
-        setSnackbarMessage('Error fetching roles. Please try again.');
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        showError('Error fetching roles. Please try again.');
       }
     };
 
@@ -254,33 +330,55 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
   }, [open, user]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
-    // Clear error when user starts typing
-    setError('');
+    // Clear field error when user starts typing
+    setFieldErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
+
+      // Reset field errors
+      setFieldErrors({
+        email: '',
+        user_name: '',
+        mobile_name: '',
+        roleId: ''
+      });
 
       // Validate required fields
+      const newFieldErrors = {};
       const requiredFields = ['email', 'user_name', 'mobile_name', 'roleId'];
-      const missingFields = requiredFields.filter(field => !formData[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
-      }
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          newFieldErrors[field] = 'This field is required';
+        }
+      });
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email)) {
-        throw new Error('Please enter a valid email address');
+      if (formData.email && !emailRegex.test(formData.email)) {
+        newFieldErrors.email = 'Please enter a valid email address';
+      }
+
+      // If there are field errors, show them and stop submission
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
+        return;
       }
 
       const response = await axios.put(
@@ -292,42 +390,30 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
       );
 
       if (response.data.success) {
-        setSnackbarMessage('User updated successfully!');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
         onUserUpdated();
         handleClose();
       }
     } catch (error) {
-      let errorMessage = error.message;
-      
-      // Handle duplicate email error
-      if (error.response?.data?.message?.includes('duplicate') || 
-          error.response?.data?.message?.includes('already exists')) {
-        errorMessage = `The email "${formData.email}" is already associated with another user. Please use a different email address.`;
+      if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          email: 'This email is already in use'
+        }));
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to perform this action.");
       } else {
-        errorMessage = error.response?.data?.message || error.message || "Failed to update user. Please try again.";
+        showError("Unable to update user. Please try again later.");
       }
-      
-      setError(errorMessage);
-      setSnackbarMessage(errorMessage);
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Edit User</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="User Name"
@@ -336,7 +422,11 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
-              error={!!error && !formData.user_name}
+              error={!!fieldErrors.user_name}
+              helperText={fieldErrors.user_name}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               label="Mobile Number"
@@ -345,7 +435,11 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
-              error={!!error && !formData.mobile_name}
+              error={!!fieldErrors.mobile_name}
+              helperText={fieldErrors.mobile_name}
+              inputProps={{ 
+                required: false 
+              }}
             />
             <TextField
               label="Email"
@@ -355,9 +449,26 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
-              error={!!error && (!formData.email || error.includes('email'))}
-              helperText={error && error.includes('email') ? error : ''}
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
+              inputProps={{ 
+                required: false 
+              }}
             />
+            {/* <TextField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              fullWidth
+              required
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
+              inputProps={{ 
+                required: false 
+              }}
+            /> */}
             <TextField
               select
               label="Role"
@@ -366,7 +477,11 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
-              error={!!error && !formData.roleId}
+              error={!!fieldErrors.roleId}
+              helperText={fieldErrors.roleId}
+              inputProps={{ 
+                required: false 
+              }}
             >
               {roles.map((role) => (
                 <MenuItem key={role._id} value={role._id}>
@@ -382,6 +497,9 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               onChange={handleChange}
               fullWidth
               required
+              inputProps={{ 
+                required: false 
+              }}
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
@@ -399,19 +517,6 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
           </Button>
         </DialogActions>
       </form>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-      >
-        <Alert 
-          onClose={() => setSnackbarOpen(false)} 
-          severity={snackbarSeverity}
-          sx={{ width: '100%' }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </Dialog>
   );
 };
@@ -419,13 +524,15 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [tableError, setTableError] = useState(null);
   const [editUser, setEditUser] = useState(null);
   const [openEditForm, setOpenEditForm] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [openAddForm, setOpenAddForm] = useState(false);
-  const { user } = useSelector((state) => state.auth); // Get the logged-in user
+  const { user } = useSelector((state) => state.auth);
+  
+  const { showError, showSuccess, clearAlerts } = useAlerts();
 
   // Add new state for table
   const [columnFilters, setColumnFilters] = useState([]);
@@ -447,9 +554,11 @@ const UserManagement = () => {
 
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
 
-      // Build query parameters
       const queryParams = new URLSearchParams({
         page: pagination.pageIndex + 1,
         limit: pagination.pageSize,
@@ -470,7 +579,14 @@ const UserManagement = () => {
         setRowCount(response.data.totalCount);
       }
     } catch (error) {
-      setError(error.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
+      if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to view users.");
+      } else {
+        showError("Unable to load users. Please try again later.");
+      }
+      setTableError("Unable to load users.");
     } finally {
       setLoading(false);
       setIsRefetching(false);
@@ -529,10 +645,10 @@ const UserManagement = () => {
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    muiToolbarAlertBannerProps: error
+    muiToolbarAlertBannerProps: tableError
       ? {
           color: 'error',
-          children: error,
+          children: tableError,
         }
       : undefined,
     onColumnFiltersChange: setColumnFilters,
@@ -545,7 +661,7 @@ const UserManagement = () => {
       globalFilter,
       isLoading: loading,
       pagination,
-      showAlertBanner: Boolean(error),
+      showAlertBanner: Boolean(showError),
       showProgressBars: isRefetching,
       sorting,
     },
@@ -620,7 +736,8 @@ const UserManagement = () => {
 
   const handleUserAdded = () => {
     fetchUsers();
-    handleCloseAddForm();
+    showSuccess('User added successfully!');
+    setOpenAddForm(false);
   };
 
   const handleCloseEditForm = () => {
@@ -630,7 +747,8 @@ const UserManagement = () => {
 
   const handleUserUpdated = () => {
     fetchUsers();
-    handleCloseEditForm();
+    showSuccess('User updated successfully!');
+    setOpenEditForm(false);
   };
 
   const handleDeleteClick = (user) => {
@@ -641,7 +759,10 @@ const UserManagement = () => {
   const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
 
       await axios.delete(`${process.env.REACT_APP_BASE_URL}api/users/${userToDelete._id}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -649,8 +770,17 @@ const UserManagement = () => {
       setOpenDeleteDialog(false);
       setUserToDelete(null);
       fetchUsers();
+      showSuccess('User deleted successfully!');
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to delete user. The user may have active leads assigned or may have already been deleted.");
+      if (error.response?.status === 409) {
+        showError("Cannot delete this user as they have active leads assigned.");
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to delete users.");
+      } else {
+        showError("Unable to delete user. Please try again later.");
+      }
     }
   };
 
@@ -665,6 +795,7 @@ const UserManagement = () => {
 
   return (
     <Box>
+      <GlobalAlerts />
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 4 }}>

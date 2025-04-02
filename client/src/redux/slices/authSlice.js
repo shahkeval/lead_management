@@ -129,10 +129,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Login failed';
       })
-      // .addCase(getMe.pending, (state) => {
-      //   state.loading = true;
-      //   state.error = null;
-      // })
+      .addCase(getMe.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(getMe.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload.user;

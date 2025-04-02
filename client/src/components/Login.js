@@ -13,6 +13,8 @@ import {
   Snackbar,
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
+import { useAlerts } from '../context/AlertContext';
+import GlobalAlerts from './common/GlobalAlerts';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -22,14 +24,12 @@ const Login = () => {
     isRegistering: false
   });
 
-  const [successMessage, setSuccessMessage] = useState('');
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [emailError, setEmailError] = useState('');
+  const { showError, showSuccess } = useAlerts();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading, error: reduxError } = useSelector((state) => state.auth);
 
   const validateEmail = (email) => {
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
@@ -38,9 +38,6 @@ const Login = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (e.target.name === 'email') {
-      setEmailError('');
-    }
   };
 
   const toggleMode = () => {
@@ -57,7 +54,7 @@ const Login = () => {
     e.preventDefault();
 
     if (!validateEmail(formData.email)) {
-      setEmailError('Please enter a valid email address');
+      showError('Please enter a valid email address');
       return;
     }
 
@@ -66,15 +63,14 @@ const Login = () => {
       
       if (result.error) {
         // console.error('Login Error:', result.error);
-        setEmailError('Login failed. Please check your credentials.');
+        showError('Login failed. Please check your credentials.');
         return;
       }
 
       // Fetch user data after successful login
       // await dispatch(getMe()).unwrap();
 
-      setSuccessMessage('Login successful!');
-      setOpenSnackbar(true);
+      showSuccess('Login successful!');
 
       setTimeout(() => {
         // Check for stored path first
@@ -87,19 +83,13 @@ const Login = () => {
       }, 1000);
 
     } catch (error) {
-      setEmailError();
+      showError(error.response?.data?.message || 'Login failed. Please try again.');
     }
-  };
-
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setOpenSnackbar(false);
   };
 
   return (
     <Container component="main" maxWidth="xs">
+      <GlobalAlerts />
       <Box
         sx={{
           marginTop: 8,
@@ -111,32 +101,6 @@ const Login = () => {
         <Typography component="h1" variant="h5">
           Sign in
         </Typography>
-        {(error || emailError) && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              width: '100%', 
-              mt: 2,
-              mb: 2 
-            }}
-          >
-            {error || emailError}
-          </Alert>
-        )}
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={3000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={handleSnackbarClose} 
-            severity="success" 
-            sx={{ width: '100%' }}
-          >
-            {successMessage}
-          </Alert>
-        </Snackbar>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
           <TextField
             margin="normal"
@@ -149,8 +113,6 @@ const Login = () => {
             autoFocus
             value={formData.email}
             onChange={handleChange}
-            error={!!emailError}
-            helperText={emailError}
           />
           <TextField
             margin="normal"

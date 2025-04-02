@@ -26,6 +26,8 @@ import AddRoleForm from './roles/AddRoleForm';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import Breadcrumbs from './common/Breadcrumbs';
+import { useAlerts } from '../context/AlertContext';
+import GlobalAlerts from './common/GlobalAlerts';
 
 
 const ManageRoles = () => {
@@ -38,12 +40,21 @@ const ManageRoles = () => {
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({
+    roleName: '',
+    description: ''
+  });
   const { user } = useSelector((state) => state.auth);
+  const { showError, showSuccess } = useAlerts();
+
   const fetchRoles = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
 
       const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/roles`, {
         headers: {
@@ -54,8 +65,13 @@ const ManageRoles = () => {
         setRoles(response.data.roles);
       }
     } catch (error) {
-      console.error('Error fetching roles:', error);
-      setError(error.response?.data?.message || "Unable to fetch roles. Please check your connection and try again.");
+      if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to view roles.");
+      } else {
+        showError("Unable to fetch roles. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
@@ -83,34 +99,56 @@ const ManageRoles = () => {
 
   const handleEditRole = (role) => {
     setEditRole(role);
+    setFieldErrors({ roleName: '', description: '' });
     setOpenEditDialog(true);
   };
 
   const handleCloseEditDialog = () => {
     setEditRole(null);
+    setFieldErrors({ roleName: '', description: '' });
     setOpenEditDialog(false);
   };
 
   const handleUpdateRole = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
 
       // Validate required fields
       if (!editRole?.roleName?.trim()) {
-        throw new Error('Role name cannot be empty');
+        setFieldErrors(prev => ({
+          ...prev,
+          roleName: 'Role name is required'
+        }));
+        return;
       }
 
-      const response = await axios.put(`${process.env.REACT_APP_BASE_URL}api/roles/${editRole._id}`, editRole, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.put(
+        `${process.env.REACT_APP_BASE_URL}api/roles/${editRole._id}`,
+        editRole,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
       if (response.data.success) {
-        fetchRoles(); // Refresh the roles list
+        fetchRoles();
         handleCloseEditDialog();
+        showSuccess('Role updated successfully!');
       }
     } catch (error) {
-      setError(error.response?.data?.message || error.message || "Failed to update role. Please try again.");
+      if (error.response?.status === 409) {
+        showError("This role name already exists.");
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to update roles.");
+      } else {
+        showError("Unable to update role. Please try again later.");
+      }
     }
   };
 
@@ -127,23 +165,39 @@ const ManageRoles = () => {
   const handleDeleteRole = async () => {
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
 
-      const response = await axios.delete(`${process.env.REACT_APP_BASE_URL}api/roles/${roleToDelete._id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.delete(
+        `${process.env.REACT_APP_BASE_URL}api/roles/${roleToDelete._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
 
       if (response.data.success) {
-        fetchRoles(); // Refresh the roles list
-        handleCloseDeleteDialog(); // Close the dialog
+        fetchRoles();
+        handleCloseDeleteDialog();
+        showSuccess('Role deleted successfully!');
       }
     } catch (error) {
-      setError(error.response?.data?.message || "Failed to delete role. This role may be assigned to users or may have already been deleted.");
+      if (error.response?.status === 409) {
+        showError("Cannot delete this role as it is assigned to users.");
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to delete roles.");
+      } else {
+        showError("Unable to delete role. Please try again later.");
+      }
     }
   };
 
   return (
     <Box>
+      <GlobalAlerts />
       <Box sx={{ p: 3 }}>
       <Breadcrumbs/>
         <Box sx={{ 
@@ -314,20 +368,32 @@ const ManageRoles = () => {
             <TextField
               label="Role Name"
               value={editRole?.roleName || ''}
-              onChange={(e) => setEditRole({ ...editRole, roleName: e.target.value })}
+              onChange={(e) => {
+                setEditRole({ ...editRole, roleName: e.target.value });
+                setFieldErrors(prev => ({ ...prev, roleName: '' }));
+              }}
               fullWidth
               required
-              sx={{ fontSize: '1rem' }}
+              error={!!fieldErrors.roleName}
+              helperText={fieldErrors.roleName}
+              sx={{ mt: 2, mb: 2 }}
+              inputProps={{ required: false }}
             />
             <TextField
               label="Description"
               value={editRole?.description || ''}
-              onChange={(e) => setEditRole({ ...editRole, description: e.target.value })}
+              onChange={(e) => {
+                setEditRole({ ...editRole, description: e.target.value });
+                setFieldErrors(prev => ({ ...prev, description: '' }));
+              }}
               fullWidth
               required
               multiline
               rows={4}
-              sx={{ fontSize: '1rem' }}
+              error={!!fieldErrors.description}
+              helperText={fieldErrors.description}
+              sx={{ mb: 2 }}
+              inputProps={{ required: false }}
             />
           </DialogContent>
           <DialogActions>

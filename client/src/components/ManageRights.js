@@ -22,12 +22,15 @@ import {
   TextField,
   MenuItem,
   FormControlLabel,
+  FormHelperText,
 } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { updateRoleRights, fetchAllModules, fetchRoles } from '../redux/slices/roleSlice';
 import axios from 'axios';
 import Breadcrumbs from './common/Breadcrumbs';
 import Navbar from './Navbar';
+import { useAlerts } from '../context/AlertContext';
+import GlobalAlerts from './common/GlobalAlerts';
 
 // AddModuleForm Component
 const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
@@ -36,9 +39,14 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
     actions: [],
     parentId: '',
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    moduleName: '',
+    actions: '',
+    parentId: ''
+  });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [modules, setModules] = useState([]);
+  const { showError, showSuccess } = useAlerts();
 
   const actions = ['create', 'update', 'list', 'view', 'delete', 'parent'];
 
@@ -50,19 +58,17 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.data.success) {
-          // Filter modules that have 'parent' action
           const parentModules = response.data.modules.filter(module => 
             module.action === 'parent' && !module.parentId
           );
           
-          // Get unique module names
           const uniqueModules = Array.from(new Set(parentModules.map(module => module.moduleName)))
             .map(name => parentModules.find(module => module.moduleName === name));
 
           setModules(uniqueModules);
         }
       } catch (error) {
-        setError(error.response?.data?.message || 'Error fetching modules');
+        showError(error.response?.data?.message || 'Error fetching modules');
       }
     };
 
@@ -80,26 +86,48 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
           : [...prev.actions, value];
         return { ...prev, actions };
       });
+      setFieldErrors(prev => ({ ...prev, actions: '' }));
     } else {
       setFormData({
         ...formData,
         [name]: value,
       });
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
+
+      // Reset field errors
+      setFieldErrors({
+        moduleName: '',
+        actions: '',
+        parentId: ''
+      });
 
       // Validate required fields
-      if (!formData.moduleName || formData.actions.length === 0) {
-        throw new Error('Please provide a module name and select at least one action.');
+      const newFieldErrors = {};
+      if (!formData.moduleName) {
+        newFieldErrors.moduleName = 'Module name is required';
+      }
+      if (formData.actions.length === 0) {
+        newFieldErrors.actions = 'Please select at least one action';
+      }
+
+      // If there are field errors, show them and stop submission
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
+        setLoading(false);
+        return;
       }
 
       const requests = formData.actions.map(action => ({
@@ -118,7 +146,18 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
       handleClose();
       setFormData({ moduleName: '', actions: [], parentId: '' });
     } catch (error) {
-      setError(error.response?.data?.message || error.message || 'Failed to add module. Please try again.');
+      if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          moduleName: 'This module name already exists'
+        }));
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to perform this action.");
+      } else {
+        showError("Unable to add module. Please try again later.");
+      }
     } finally {
       setLoading(false);
     }
@@ -127,9 +166,8 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Add New Module</DialogTitle>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <TextField
             label="Module Name"
             name="moduleName"
@@ -137,7 +175,10 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
             onChange={handleChange}
             fullWidth
             required
+            error={!!fieldErrors.moduleName}
+            helperText={fieldErrors.moduleName}
             sx={{ mb: 2 }}
+            inputProps={{ required: false }}
           />
           <div>
             <Typography variant="subtitle1">Actions</Typography>
@@ -153,6 +194,9 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
                 label={action.charAt(0).toUpperCase() + action.slice(1)}
               />
             ))}
+            {fieldErrors.actions && (
+              <FormHelperText error>{fieldErrors.actions}</FormHelperText>
+            )}
           </div>
           <TextField
             select
@@ -162,7 +206,9 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
             onChange={handleChange}
             fullWidth
             sx={{ mb: 2 }}
-            helperText="Select a parent module that has 'parent' action"
+            error={!!fieldErrors.parentId}
+            helperText={fieldErrors.parentId || "Select a parent module that has 'parent' action"}
+            inputProps={{ required: false }}
           >
             <MenuItem value="">
               <em>None</em>
@@ -176,7 +222,11 @@ const AddModuleForm = ({ open, handleClose, onModuleAdded }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={loading}>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            disabled={loading}
+          >
             {loading ? 'Adding...' : 'Add Module'}
           </Button>
         </DialogActions>
@@ -190,7 +240,6 @@ const ManageRights = () => {
   const dispatch = useDispatch();
   const { roles, allModules } = useSelector((state) => state.roles);
   const [rights, setRights] = useState({});
-  const [message, setMessage] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [newModule, setNewModule] = useState({
     moduleName: '',
@@ -201,9 +250,7 @@ const ManageRights = () => {
   const [roleStatus, setRoleStatus] = useState('Active');
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const { showError, showSuccess } = useAlerts();
 
   const role = roles.find((r) => r._id === roleId);
   const actions = ['create', 'update', 'list', 'view', 'delete'];
@@ -288,13 +335,13 @@ const ManageRights = () => {
 
       // If any selected modules don't exist in database
       if (missingModules.length > 0) {
-        setMessage(`The following modules are not available or have been deleted: ${missingModules.join(', ')}. Please refresh and try again.`);
+        showError(`The following modules are not available or have been deleted: ${missingModules.join(', ')}. Please refresh and try again.`);
         return;
       }
 
       // Validate that at least one module is selected
       if (selectedModuleIds.length === 0) {
-        setMessage('Please select at least one module right before saving.');
+        showError('Please select at least one module right before saving.');
         return;
       }
 
@@ -304,17 +351,17 @@ const ManageRights = () => {
       })).unwrap();
 
       if (result.success) {
-        setMessage('Rights updated successfully');
+        showSuccess('Rights updated successfully');
         await Promise.all([
           dispatch(fetchRoles()),
           // dispatch(fetchAllModules())
         ]);
       } else {
-        setMessage(result.message || 'Failed to update rights. Please try again.');
+        showError(result.message || 'Failed to update rights. Please try again.');
       }
     } catch (error) {
       console.error('Error saving rights:', error);
-      setMessage(error.response?.data?.message || 'Failed to update rights. Please check your connection and try again.');
+      showError(error.response?.data?.message || 'Failed to update rights. Please check your connection and try again.');
       await Promise.all([
         dispatch(fetchRoles()),
         // dispatch(fetchAllModules())
@@ -324,8 +371,7 @@ const ManageRights = () => {
 
   const handleModuleAdded = () => {
     dispatch(fetchAllModules());
-    setOpenSnackbar(true);
-    setSuccessMessage('Module added successfully!');
+    showSuccess('Module added successfully!');
   };
 
   // Use a Set to track displayed modules
@@ -337,6 +383,7 @@ const ManageRights = () => {
 
   return (
     <Box>
+      <GlobalAlerts />
       <Navbar/>
       <Box sx={{ p: 3 }}>
         <Breadcrumbs />
@@ -373,16 +420,6 @@ const ManageRights = () => {
           </Box>
         </Box>
         
-        {message && (
-          <Alert 
-            severity={message.includes('success') ? 'success' : 'error'}
-            sx={{ mb: 2 }}
-            onClose={() => setMessage('')}
-          >
-            {message}
-          </Alert>
-        )}
-
         <Button
           variant="contained"
           onClick={() => setOpenDialog(true)}
@@ -456,16 +493,6 @@ const ManageRights = () => {
         >
           Save Changes
         </Button>
-
-        <Snackbar
-          open={openSnackbar}
-          autoHideDuration={3000}
-          onClose={() => setOpenSnackbar(false)}
-        >
-          <Alert onClose={() => setOpenSnackbar(false)} severity="success">
-            {successMessage}
-          </Alert>
-        </Snackbar>
 
         {/* Render the list of modules */}
         {modules.map((module) => (

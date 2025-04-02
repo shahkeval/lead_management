@@ -22,6 +22,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import axios from "axios";
 import { useSelector } from 'react-redux';
@@ -30,11 +31,16 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from 'material-react-table';
+import ErrorAlert from './common/ErrorAlert';
+import useFormError from '../hooks/useFormError';
+import SuccessAlert from './common/SuccessAlert';
+import useAlerts from '../hooks/useAlerts';
+import GlobalAlerts from './common/GlobalAlerts';
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [tableError, setTableError] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -77,6 +83,26 @@ const LeadManagement = () => {
     selectedUser: "",
   };
 
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
+
+  const {
+    globalError,
+    setError,
+    clearErrors
+  } = useFormError();
+
+  const [fieldErrors, setFieldErrors] = useState({
+    clientName: '',
+    mobileNo: '',
+    email: '',
+    sourceOfInquiry: '',
+    companyName: '',
+    selectedUser: '',
+    leadStatus: ''
+  });
+
+  const { showError, showSuccess } = useAlerts();
+
   const fetchLeads = async () => {
     if (!leads.length) {
       setLoading(true);
@@ -111,7 +137,7 @@ const LeadManagement = () => {
         setRowCount(response.data.totalCount);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to fetch leads.");
+      setTableError(err.response?.data?.message || "Unable to fetch leads.");
     } finally {
       setLoading(false);
       setIsRefetching(false);
@@ -133,7 +159,7 @@ const LeadManagement = () => {
 
       if (response.data.success) setUsers(response.data.users);
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
+      showError(err.response?.data?.message || "Unable to fetch users. Please check your connection and try again.");
     }
   };
 
@@ -152,7 +178,21 @@ const LeadManagement = () => {
   }, [users, formData.selectedUser]);
 
   useEffect(() => {
-    fetchLeads();
+    // Clear the previous timeout if it exists
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    // Set a new timeout to call fetchLeads after 4000ms
+    const timeout = setTimeout(() => {
+      fetchLeads();
+    }, 400);
+
+    // Store the timeout ID
+    setDebounceTimeout(timeout);
+
+    // Cleanup function to clear the timeout on component unmount
+    return () => clearTimeout(timeout);
   }, [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize, sorting]);
 
   const handleAddLead = () => {
@@ -190,16 +230,11 @@ const LeadManagement = () => {
       });
 
       if (response.data.success) {
-        setSnackbarMessage('Lead deleted successfully!');
-        setSnackbarSeverity('success');
-        setOpenSnackbar(true);
+        showSuccess('Lead deleted successfully!');
         fetchLeads();
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete lead.");
-      setSnackbarMessage(err.response?.data?.message || "Failed to delete lead.");
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showError(err.response?.data?.message || "Failed to delete lead.");
     } finally {
       setOpenDeleteDialog(false);
     }
@@ -219,13 +254,41 @@ const LeadManagement = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      if (!token) throw new Error("Your session has expired. Please log in again.");
+      if (!token) {
+        showError("Your session has expired. Please log in again.");
+        return;
+      }
+
+      // Reset field errors
+      setFieldErrors({
+        clientName: '',
+        mobileNo: '',
+        email: '',
+        sourceOfInquiry: '',
+        companyName: '',
+        selectedUser: '',
+        leadStatus: ''
+      });
 
       // Validate required fields
+      const newFieldErrors = {};
       const requiredFields = ['clientName', 'mobileNo', 'email', 'sourceOfInquiry', 'selectedUser'];
-      const missingFields = requiredFields.filter(field => !formData[field]);
-      if (missingFields.length > 0) {
-        throw new Error(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          newFieldErrors[field] = 'This field is required';
+        }
+      });
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (formData.email && !emailRegex.test(formData.email)) {
+        newFieldErrors.email = 'Please enter a valid email address';
+      }
+
+      // If there are field errors, show them and stop submission
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
+        return;
       }
 
       const leadData = {
@@ -239,26 +302,45 @@ const LeadManagement = () => {
       };
 
       if (selectedLead) {
-        await axios.put(`${process.env.REACT_APP_BASE_URL}api/leads/update/${selectedLead._id}`, leadData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSnackbarMessage('Lead updated successfully!');
+        const response = await axios.put(
+          `${process.env.REACT_APP_BASE_URL}api/leads/update/${selectedLead._id}`, 
+          leadData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (response.data.success) {
+          showSuccess('Lead updated successfully!');
+          setOpenForm(false);
+          fetchLeads();
+        }
       } else {
-        await axios.post(`${process.env.REACT_APP_BASE_URL}api/leads/add`, leadData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setSnackbarMessage('Lead created successfully!');
+        const response = await axios.post(
+          `${process.env.REACT_APP_BASE_URL}api/leads/add`,
+          leadData,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (response.data.success) {
+          showSuccess('Lead created successfully!');
+          setOpenForm(false);
+          fetchLeads();
+        }
       }
-
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
-      setOpenForm(false);
-      fetchLeads();
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || "Failed to save lead. Please try again.");
-      setSnackbarMessage(err.response?.data?.message || err.message || "Failed to save lead. Please try again.");
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+    } catch (error) {
+      if (error.response?.status === 409) {
+        setFieldErrors(prev => ({
+          ...prev,
+          email: 'This email is already registered for another lead'
+        }));
+      } else if (error.response?.status === 401) {
+        showError("Your session has expired. Please log in again.");
+      } else if (error.response?.status === 403) {
+        showError("You don't have permission to perform this action.");
+      } else {
+        showError(error.response?.data?.message || "Failed to save lead. Please try again.");
+      }
     }
   };
 
@@ -296,27 +378,43 @@ const LeadManagement = () => {
     {
       accessorKey: 'lead_id',
       header: 'Lead ID',
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'emp_id.user_name',
       header: 'Employee Name',
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'client_name',
       header: 'Client Name',
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'client_mobile_number',
       header: 'Mobile No.',
+      enableGlobalFilter: true,
+    },
+    {
+      accessorKey: 'client_email',
+      header: 'Email',
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'date_time',
       header: 'Date',
       Cell: ({ cell }) => new Date(cell.getValue()).toLocaleDateString(),
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'company_name',
       header: 'Company Name',
+      enableGlobalFilter: true,
+    },
+    {
+      accessorKey: 'source_of_inquiry',
+      header: 'Source',
+      enableGlobalFilter: true,
     },
     {
       accessorKey: 'lead_status',
@@ -331,6 +429,7 @@ const LeadManagement = () => {
           {cell.getValue()}
         </div>
       ),
+      enableGlobalFilter: true,
     },
   ], []);
 
@@ -341,10 +440,10 @@ const LeadManagement = () => {
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
-    muiToolbarAlertBannerProps: error
+    muiToolbarAlertBannerProps: tableError
       ? {
           color: 'error',
-          children: error,
+          children: tableError,
         }
       : undefined,
     onColumnFiltersChange: setColumnFilters,
@@ -357,7 +456,7 @@ const LeadManagement = () => {
       globalFilter,
       isLoading: loading,
       pagination,
-      showAlertBanner: Boolean(error),
+      showAlertBanner: Boolean(tableError),
       showProgressBars: isRefetching,
       sorting,
     },
@@ -413,6 +512,7 @@ const LeadManagement = () => {
 
   return (
     <Box sx={{ p: 0 }}>
+      <GlobalAlerts />
       <Box sx={{ p: 3 }}>
         <Breadcrumbs/>
         <Typography variant="h4" sx={{ mb: 4 }}>
@@ -431,86 +531,132 @@ const LeadManagement = () => {
       {/* Lead Form Dialog */}
       <Dialog open={openForm} onClose={handleFormClose}>
         <DialogTitle>{selectedLead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Client Name"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={formData.clientName}
-            onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-            required
-          />
-          <TextField
-            label="Mobile No."
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={formData.mobileNo}
-            onChange={(e) => setFormData({ ...formData, mobileNo: e.target.value })}
-            required
-          />
-          <TextField
-            label="Email"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-          />
-          <TextField
-            label="Source of Inquiry"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={formData.sourceOfInquiry}
-            onChange={(e) => setFormData({ ...formData, sourceOfInquiry: e.target.value })}
-            required
-          />
-          <TextField
-            label="Company Name"
-            variant="outlined"
-            fullWidth
-            margin="normal"
-            value={formData.companyName}
-            onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-            required
-          />
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel>User</InputLabel>
-            <Select
-              value={formData.selectedUser}
-              onChange={(e) => setFormData({ ...formData, selectedUser: e.target.value })}
+        <form onSubmit={handleSubmit} noValidate>
+          <DialogContent>
+            <TextField
+              label="Client Name"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.clientName}
+              onChange={(e) => {
+                setFormData({ ...formData, clientName: e.target.value });
+                setFieldErrors(prev => ({ ...prev, clientName: '' }));
+              }}
+              required
+              error={!!fieldErrors.clientName}
+              helperText={fieldErrors.clientName}
+              inputProps={{ required: false }}
+            />
+            <TextField
+              label="Mobile No."
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.mobileNo}
+              onChange={(e) => {
+                setFormData({ ...formData, mobileNo: e.target.value });
+                setFieldErrors(prev => ({ ...prev, mobileNo: '' }));
+              }}
+              required
+              error={!!fieldErrors.mobileNo}
+              helperText={fieldErrors.mobileNo}
+              inputProps={{ required: false }}
+            />
+            <TextField
+              label="Email"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.email}
+              onChange={(e) => {
+                setFormData({ ...formData, email: e.target.value });
+                setFieldErrors(prev => ({ ...prev, email: '' }));
+              }}
+              required
+              error={!!fieldErrors.email}
+              helperText={fieldErrors.email}
+              inputProps={{ required: false }}
+            />
+            <TextField
+              label="Source of Inquiry"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.sourceOfInquiry}
+              onChange={(e) => {
+                setFormData({ ...formData, sourceOfInquiry: e.target.value });
+                setFieldErrors(prev => ({ ...prev, sourceOfInquiry: '' }));
+              }}
+              required
+              error={!!fieldErrors.sourceOfInquiry}
+              helperText={fieldErrors.sourceOfInquiry}
+              inputProps={{ required: false }}
+            />
+            <TextField
+              label="Company Name"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.companyName}
+              onChange={(e) => {
+                setFormData({ ...formData, companyName: e.target.value });
+                setFieldErrors(prev => ({ ...prev, companyName: '' }));
+              }}
+              required
+              error={!!fieldErrors.companyName}
+              helperText={fieldErrors.companyName}
+              inputProps={{ required: false }}
+            />
+            <FormControl 
+              fullWidth 
+              margin="normal" 
+              required
+              error={!!fieldErrors.selectedUser}
             >
-              {users.map((user) => (
-                <MenuItem key={user._id} value={user._id}>
-                  {user.user_name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl fullWidth margin="normal" required>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={formData.leadStatus}
-              onChange={(e) => setFormData({ ...formData, leadStatus: e.target.value })}
-            >
-              <MenuItem value="Won">Won</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Follow Up">Follow Up</MenuItem>
-              <MenuItem value="Lost">Lost</MenuItem>
-            </Select>
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleFormClose} color="primary">
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} color="primary">
-            {selectedLead ? 'Update' : 'Add'}
-          </Button>
-        </DialogActions>
+              <InputLabel>User</InputLabel>
+              <Select
+                value={formData.selectedUser}
+                onChange={(e) => {
+                  setFormData({ ...formData, selectedUser: e.target.value });
+                  setFieldErrors(prev => ({ ...prev, selectedUser: '' }));
+                }}
+                inputProps={{ required: false }}
+              >
+                {users.map((user) => (
+                  <MenuItem key={user._id} value={user._id}>
+                    {user.user_name}
+                  </MenuItem>
+                ))}
+              </Select>
+              {fieldErrors.selectedUser && (
+                <FormHelperText>{fieldErrors.selectedUser}</FormHelperText>
+              )}
+            </FormControl>
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={formData.leadStatus}
+                onChange={(e) => {
+                  setFormData({ ...formData, leadStatus: e.target.value });
+                  setFieldErrors(prev => ({ ...prev, leadStatus: '' }));
+                }}
+                inputProps={{ required: false }}
+              >
+                <MenuItem value="Won">Won</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+                <MenuItem value="Follow Up">Follow Up</MenuItem>
+                <MenuItem value="Lost">Lost</MenuItem>
+              </Select>
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleFormClose}>Cancel</Button>
+            <Button type="submit" color="primary">
+              {selectedLead ? 'Update' : 'Add'}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
