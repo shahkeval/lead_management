@@ -28,7 +28,7 @@ const ForgotPassword = () => {
     e.preventDefault();
 
     if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
+      setEmailError('Enter proper email address!!');
       return;
     }
 

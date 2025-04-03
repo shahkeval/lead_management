@@ -10,6 +10,7 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
+import axios from 'axios';
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -30,15 +31,28 @@ const ChangePassword = () => {
     }
 
     try {
-      await dispatch(changePassword({ currentPassword, newPassword })).unwrap();
-      setSuccessMessage('Password changed successfully!');
-      setOpenSnackbar(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setErrorMessage('');
+      const token = localStorage.getItem("token"); // Get the token from local storage
+      const response = await axios.post(
+        `${process.env.REACT_APP_BASE_URL}api/auth/change-password`, 
+        { currentPassword, newPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${token}` // Include the token in the request headers
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage('Password changed successfully!');
+        setOpenSnackbar(true);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setErrorMessage('');
+      }
     } catch (error) {
-      setErrorMessage('Failed to change password. Please try again.');
+      // Display the error message from the backend
+      setErrorMessage(error.response?.data?.message || 'Failed to change password. Please try again.');
     }
   };
 

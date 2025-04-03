@@ -56,7 +56,7 @@ const Register = () => {
     
     // Validate email
     if (!validateEmail(formData.email)) {
-      setFieldErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+      setFieldErrors(prev => ({ ...prev, email: 'Please enter a proper email address' }));
       return;
     }
 

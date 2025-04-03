@@ -120,7 +120,7 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (formData.email && !emailRegex.test(formData.email)) {
-        newFieldErrors.email = 'Please enter a valid email address';
+        newFieldErrors.email = 'Please enter a proper email address';
       }
 
       // If there are field errors, show them and stop submission
@@ -372,7 +372,7 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (formData.email && !emailRegex.test(formData.email)) {
-        newFieldErrors.email = 'Please enter a valid email address';
+        newFieldErrors.email = 'Please enter a proper email address';
       }
 
       // If there are field errors, show them and stop submission

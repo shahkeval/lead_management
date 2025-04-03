@@ -30,7 +30,7 @@ const Navbar = () => {
         </Typography>
         {user && (
           <Typography variant="body1" style={{ marginRight: '20px', color: 'white' }}>
-            Welcome, {user.user_name}
+            Welcome, {user.userName}
           </Typography>
         )}
         <Typography variant="body1" style={{ marginRight: '20px', color: 'white' }}>

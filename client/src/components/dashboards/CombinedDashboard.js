@@ -74,7 +74,9 @@ const CombinedDashboard = () => {
     const handleChangePassword = () => {
         navigate('/change_password'); // Navigate to Change Password page
     };
-
+    const canChangePassword = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "change password" && m.action === "view"
+    );
     return (
         <div>
             <GlobalAlerts />
@@ -82,14 +84,41 @@ const CombinedDashboard = () => {
                 <>
                     {user.role.roleName === 'Admin' && (
                         <Box sx={{ p: 3 }}>
-                            <Breadcrumbs/>
+                            <Breadcrumbs />
                             <Typography variant="h4" sx={{ mb: 4 }}>
                                 Admin Dashboard
                             </Typography>
-                            <Typography variant="subtitle1" sx={{ mb: 3 }}>
-                                Welcome, {user?.email}
-                            </Typography>
 
+                            <Grid
+                                container
+                                direction="row"
+                                sx={{
+                                    // justifyContent: "center",
+                                    alignItems: "center",
+                                    display: "flex",
+                                    marginBottom: 3,
+                                    justifyContent: "space-between",
+                                }}
+                            >
+
+                                <Typography variant="subtitle1">
+                                    Welcome, {user?.email}
+                                </Typography>
+
+                             
+
+                                {canChangePassword ? ( <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleChangePassword}
+
+                                >
+                                    Change Password
+                                </Button>): ("")}
+                               
+
+
+                            </Grid>
                             <Grid container spacing={3}>
                                 {menuItems.map((item, index) => (
                                     item.allowed && ( // Only render if allowed
@@ -114,14 +143,7 @@ const CombinedDashboard = () => {
                                 ))}
                             </Grid>
 
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={handleChangePassword}
-                                sx={{ mt: 3 }}
-                            >
-                                Change Password
-                            </Button>
+
                         </Box>
                     )}
                     {user.role.roleName === 'sales manager' && (

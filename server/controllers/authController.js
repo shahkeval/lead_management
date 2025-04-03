@@ -95,7 +95,8 @@ exports.login = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
+        userName : user.userName
       }
     });
   } catch (error) {
@@ -183,25 +184,34 @@ exports.forgotPassword = async (req, res) => {
 
 // Add a new function to reset the password
 exports.resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
-
+  console.log('1');
+  const { token, newPassword , } = req.body;
+  console.log('2');
   try {
+    console.log('3');
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('4');
     const user = await User.findById(decoded.id);
-
+    console.log('5');
     if (!user) {
+      console.log('6');
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
+    console.log('7');
     // Update the user's password
     user.password = newPassword; // Make sure to hash the password in the User model
+    console.log('8');
     await user.save();
-
+    console.log('9');
     res.status(200).json({ success: true, message: 'Password has been reset successfully' });
+    console.log('10');
   } catch (error) {
+    console.log('11');
     console.error('Error resetting password:', error);
+    console.log('12');
     res.status(500).json({ success: false, message: 'Error resetting password' });
+    console.log('13');
   }
 };
 
@@ -216,7 +226,7 @@ exports.changePassword = async (req, res) => {
     }
 
     // Check if the current password is correct
-    const isMatch = await user.matchPassword(currentPassword);
+    const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
     }
@@ -227,6 +237,7 @@ exports.changePassword = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
+    console.error('Error changing password:', error); // Log the error for debugging
     res.status(500).json({ success: false, message: 'Server error' });
   }
 }; 

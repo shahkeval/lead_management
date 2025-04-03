@@ -54,7 +54,7 @@ const Login = () => {
     e.preventDefault();
 
     if (!validateEmail(formData.email)) {
-      showError('Please enter a valid email address');
+      showError('Please enter a proper email address');
       return;
     }
 
@@ -62,7 +62,7 @@ const Login = () => {
       const result = await dispatch(login(formData));
       
       if (result.error) {
-        showError(result.error.message || "Login failed. Please try again.");
+        showError(result.playload || "Login failed. Please try again.");
         return;
       }
 

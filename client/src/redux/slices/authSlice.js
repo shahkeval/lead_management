@@ -24,6 +24,7 @@ export const login = createAsyncThunk(
       // dispatch(getMe()); // Fetch user data after login
       return response.data;
     } catch (error) {
+      // console.log('error',error.response?.data?.message)
       return rejectWithValue(
         error.response?.data?.message || 'Login failed'
       );
@@ -127,6 +128,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
+        // console.log(action.payload)
         state.error = action.payload || 'Login failed';
       })
       .addCase(getMe.pending, (state) => {
@@ -148,6 +150,8 @@ const authSlice = createSlice({
       })
       .addCase(changePassword.rejected, (state, action) => {
         // Handle error
+        state.error =  'Invalid Credentials';
+
       });
   },
 });
