@@ -126,8 +126,9 @@ exports.getLeads = async (req, res) => {
 
 exports.updateLead = async (req, res) => {
   try {
-    const { leadId } = req.params;
-    const updatedLead = await Lead.findByIdAndUpdate(leadId, req.body, {
+    const { lead_id } = req.params;
+    console.log(lead_id);
+    const updatedLead = await Lead.findByIdAndUpdate(lead_id, req.body, {
       new: true,
     });
     if (!updatedLead) {

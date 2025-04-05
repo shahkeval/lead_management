@@ -37,16 +37,16 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    user_name: '',
-    mobile_name: '',
+    userName: '',
+    mobileName: '',
     roleId: '',
     status: 'Active'
   });
   const [fieldErrors, setFieldErrors] = useState({
     email: '',
     password: '',
-    user_name: '',
-    mobile_name: '',
+    userName: '',
+    mobileName: '',
     roleId: ''
   });
   const [roles, setRoles] = useState([]);
@@ -103,8 +103,8 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
       setFieldErrors({
         email: '',
         password: '',
-        user_name: '',
-        mobile_name: '',
+        userName: '',
+        mobileName: '',
         roleId: ''
       });
 
@@ -143,8 +143,8 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
         setFormData({
           email: '',
           password: '',
-          user_name: '',
-          mobile_name: '',
+          userName: '',
+          mobileName: '',
           roleId: '',
           status: 'Active'
         });
@@ -175,26 +175,26 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="User Name"
-              name="user_name"
-              value={formData.user_name}
+              name="userName"
+              value={formData.userName}
               onChange={handleChange}
               fullWidth
               required
-              error={!!fieldErrors.user_name}
-              helperText={fieldErrors.user_name}
+              error={!!fieldErrors.userName}
+              helperText={fieldErrors.username}
               inputProps={{ 
                 required: false 
               }}
             />
             <TextField
               label="Mobile Number"
-              name="mobile_name"
-              value={formData.mobile_name}
+              name="mobileName"
+              value={formData.mobileName}
               onChange={handleChange}
               fullWidth
               required
-              error={!!fieldErrors.mobile_name}
-              helperText={fieldErrors.mobile_name}
+              error={!!fieldErrors.mobileName}
+              helperText={fieldErrors.mobileName}
               inputProps={{ 
                 required: false 
               }}
@@ -283,15 +283,15 @@ const AddUserForm = ({ open, handleClose, onUserAdded }) => {
 const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
   const [formData, setFormData] = useState({
     email: '',
-    user_name: '',
-    mobile_name: '',
+    userName: '',
+    mobileName: '',
     roleId: '',
     status: 'Active'
   });
   const [fieldErrors, setFieldErrors] = useState({
     email: '',
-    user_name: '',
-    mobile_name: '',
+    userName: '',
+    mobileName: '',
     roleId: ''
   });
   const [roles, setRoles] = useState([]);
@@ -321,8 +321,8 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
     if (user) {
       setFormData({
         email: user.email,
-        user_name: user.userName,
-        mobile_name: user.mobileName,
+        userName: user.userName,
+        mobileName: user.mobileName,
         roleId: user.role._id,
         status: user.status
       });
@@ -355,8 +355,8 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
       // Reset field errors
       setFieldErrors({
         email: '',
-        user_name: '',
-        mobile_name: '',
+        userName: '',
+        mobileName: '',
         roleId: ''
       });
 
@@ -417,13 +417,13 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField
               label="User Name"
-              name="user_name"
-              value={formData.user_name}
+              name="userName"
+              value={formData.userName}
               onChange={handleChange}
               fullWidth
               required
-              error={!!fieldErrors.user_name}
-              helperText={fieldErrors.user_name}
+              error={!!fieldErrors.userName}
+              helperText={fieldErrors.userName}
               inputProps={{ 
                 required: false 
               }}
@@ -431,12 +431,12 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
             <TextField
               label="Mobile Number"
               name="mobile_name"
-              value={formData.mobile_name}
+              value={formData.mobileName}
               onChange={handleChange}
               fullWidth
               required
-              error={!!fieldErrors.mobile_name}
-              helperText={fieldErrors.mobile_name}
+              error={!!fieldErrors.mobileName}
+              helperText={fieldErrors.mobileName}
               inputProps={{ 
                 required: false 
               }}

@@ -43,7 +43,7 @@ const AppContent = () => {
   }, [token]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return ;
   }
 
   const canAccessDashbord = user?.role?.assignedModules?.some(

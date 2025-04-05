@@ -625,7 +625,7 @@ const LeadManagement = () => {
               >
                 {users.map((user) => (
                   <MenuItem key={user._id} value={user._id}>
-                    {user.user_name}
+                    {user.userName}
                   </MenuItem>
                 ))}
               </Select>

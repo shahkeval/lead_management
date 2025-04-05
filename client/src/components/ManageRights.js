@@ -378,7 +378,7 @@ const ManageRights = () => {
   const displayedModules = new Set();
 
   if (!role) {
-    return <Typography>Role not found</Typography>;
+    return <Typography>Loading</Typography>;
   }
 
   return (
