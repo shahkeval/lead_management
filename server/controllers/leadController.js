@@ -263,8 +263,40 @@ exports.get_persone_lead = async (req, res) => {
 
 exports.getClientNames = async (req, res) => {
   try {
-    // Get all non-deleted leads and extract unique client names
-    const leads = await Lead.find({ isDeleted: false })
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Authorization token missing",
+        clients: [] 
+      });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = new mongoose.Types.ObjectId(decoded.id);
+
+    // Find the user with their role
+    const user = await User.findById(userId).populate('role');
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found",
+        clients: [] 
+      });
+    }
+
+    let query = { isDeleted: false };
+
+    // Check if user has permission to see all leads or only their own
+    const hasAllLeadsPermission = user.role.visibleLeads === "All";
+
+    // If user can only see their own leads, add empId filter
+    if (!hasAllLeadsPermission) {
+      query.empId = userId;
+    }
+
+    // Get leads based on the query
+    const leads = await Lead.find(query)
       .select('clientName')
       .lean();
 
