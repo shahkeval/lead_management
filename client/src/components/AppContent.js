@@ -11,11 +11,13 @@ import UserManagement from "./UserManagement";
 import ProtectedRoute from "./ProtectedRoute";
 import LeadManagement from "./LeadManagement";
 import EditLead from "./EditLead";
-import LeadManagementUser from "./LeadManagementUser";
+// import LeadManagementUser from "./LeadManagementUser";
 import Layout from "./Layout";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from './ResetPassword';
 import ChangePassword from './ChangePassword';
+import MeetingManagement from './MeetingManagement';
+import MeetingCalendar from '../components/MeetingCalendar';
 
 const AppContent = () => {
   const { user, token, loading } = useSelector((state) => state.auth);
@@ -27,7 +29,7 @@ const AppContent = () => {
       return lastPath;
     }
 
-    // If no stored path, retuclrn default dashboard based on role
+    // If no stored path, return default dashboard based on role
     if (!user || !user.role) {
       return "/login";
     }
@@ -58,10 +60,13 @@ const AppContent = () => {
   const canAccessLeads = user?.role?.assignedModules?.some(
     (m) => m.moduleName === "lead management" && m.action === "view"
   );
+  const canAccessMeetings = user?.role?.assignedModules?.some(
+    (m) => m.moduleName === "meeting management" && m.action === "view"
+  );
 
   return (
     // <Layout showNavbar={!["/change-password/:token","/login", "/register", "/forgot-password"].includes(location.pathname)}>
-    <Layout showNavbar={["/admin/manage-rights/:roleId","/unauthorized","/dashboard", "/admin/manage-roles", "/change_password","/admin/users","/leads"].includes(location.pathname)}>
+    <Layout showNavbar={["/admin/manage-rights/:roleId","/unauthorized","/dashboard", "/admin/manage-roles", "/change_password","/admin/users","/leads","/meetings","/schedule"].includes(location.pathname)}>
 
       <Routes>
         {/* Public Routes */}
@@ -135,9 +140,24 @@ const AppContent = () => {
             </ProtectedRoute>
           }
         />
-        {/* <Route path="/leads_user" element={<LeadManagementUser />} /> */}
 
-        {/* <Route path="/leads/edit/:leadId" element={<EditLead />} /> */}
+        <Route
+          path="/meetings"
+          element={
+            <ProtectedRoute allowedRoles={canAccessMeetings}>
+              <MeetingManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/schedule"
+          element={
+            <ProtectedRoute allowedRoles={canAccessMeetings}>
+              <MeetingCalendar />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Root Route */}
         <Route

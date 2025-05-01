@@ -21,6 +21,10 @@ const Breadcrumbs = () => {
     'manage-rights': 'Manage Rights',
     'users': 'Users',
     'leads': 'Leads',
+    'meetings': 'Meetings',
+    'schedule-lead': 'Schedule Lead',
+    'meeting calendar': 'Meeting Calendar',
+    'schedule': 'Schedule Meetings',
   };
 
   const handleNavigation = (path) => {
@@ -67,6 +71,24 @@ const Breadcrumbs = () => {
       customPaths.push({
         path: '/leads',
         label: 'Leads',
+        isLast: true
+      });
+    }else if (pathnames.includes('meetings')) {
+      customPaths.push({
+        path: '/meetings',
+        label: 'Meetings',
+        isLast: true
+      });
+    }else if (pathnames.includes('schedule-lead')) {
+      customPaths.push({
+        path: '/schedule-lead',
+        label: 'Schedule Lead',
+        isLast: true
+      });
+    }else if (pathnames.includes('schedule')) {
+      customPaths.push({
+        path: '/schedule',
+        label: 'Meeting Calendar',
         isLast: true
       });
     }

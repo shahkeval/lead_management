@@ -260,3 +260,27 @@ exports.get_persone_lead = async (req, res) => {
     res.status(500).json({ success: false, message: error.message, leads: [] });
   }
 };
+
+exports.getClientNames = async (req, res) => {
+  try {
+    // Get all non-deleted leads and extract unique client names
+    const leads = await Lead.find({ isDeleted: false })
+      .select('clientName')
+      .lean();
+
+    // Extract unique client names
+    const uniqueClientNames = [...new Set(leads.map(lead => lead.clientName))].filter(Boolean);
+
+    res.status(200).json({
+      success: true,
+      clients: uniqueClientNames
+    });
+  } catch (error) {
+    console.error('Error in getClientNames:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to fetch client names',
+      error: error.message 
+    });
+  }
+};

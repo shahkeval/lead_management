@@ -58,6 +58,30 @@ const CombinedDashboard = () => {
             allowed: user.role.assignedModules.some(module => module.moduleName === 'lead management'),
         },
         {
+            title: 'Meeting Management',
+            description: 'Manage meetings and schedules',
+            action: () => {
+                if (!user.role.assignedModules.some(module => module.moduleName === 'meeting management')) {
+                    showError("You don't have permission to access Meeting Management.");
+                    return;
+                }
+                navigate('/meetings');
+            },
+            allowed: user.role.assignedModules.some(module => module.moduleName === 'meeting management'),
+        },
+        {
+            title: 'Schedule Meetings',
+            description: 'Schedule new meetings',
+            action: () => {
+                if (!user.role.assignedModules.some(module => module.moduleName === 'Schedule Meeting')) {
+                    showError("You don't have permission to access Schedule Meetings.");
+                    return;
+                }
+                navigate('/schedule');
+            },
+            allowed: user.role.assignedModules.some(module => module.moduleName === 'Schedule Meeting'),
+        },
+        {
             title: 'Reports',
             description: 'View and generate system reports',
             action: () => {
@@ -151,10 +175,36 @@ const CombinedDashboard = () => {
                             <Typography variant="h4" sx={{ mb: 4 }}>
                                 Sales Manager Dashboard
                             </Typography>
-                            <Typography variant="subtitle1" sx={{ mb: 3 }}>
-                                Welcome, {user?.email}
-                            </Typography>
+                            <Grid
+                                container
+                                direction="row"
+                                sx={{
+                                    // justifyContent: "center",
+                                    alignItems: "center",
+                                    display: "flex",
+                                    marginBottom: 3,
+                                    justifyContent: "space-between",
+                                }}
+                            >
 
+                                <Typography variant="subtitle1">
+                                    Welcome, {user?.email}
+                                </Typography>
+
+                             
+
+                                {canChangePassword ? ( <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleChangePassword}
+
+                                >
+                                    Change Password
+                                </Button>): ("")}
+                               
+
+
+                            </Grid>
                             <Grid container spacing={3}>
                                 {menuItems.map((item, index) => (
                                     item.allowed && ( // Only render if allowed
@@ -185,9 +235,36 @@ const CombinedDashboard = () => {
                             <Typography variant="h4" sx={{ mb: 4 }}>
                                 Sales Dashboard
                             </Typography>
-                            <Typography variant="subtitle1" sx={{ mb: 3 }}>
-                                Welcome, {user?.email}
-                            </Typography>
+                            <Grid
+                                container
+                                direction="row"
+                                sx={{
+                                    // justifyContent: "center",
+                                    alignItems: "center",
+                                    display: "flex",
+                                    marginBottom: 3,
+                                    justifyContent: "space-between",
+                                }}
+                            >
+
+                                <Typography variant="subtitle1">
+                                    Welcome, {user?.email}
+                                </Typography>
+
+                             
+
+                                {canChangePassword ? ( <Button
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={handleChangePassword}
+
+                                >
+                                    Change Password
+                                </Button>): ("")}
+                               
+
+
+                            </Grid>
 
                             <Grid container spacing={3}>
                                 {menuItems.map((item, index) => (

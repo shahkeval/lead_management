@@ -6,6 +6,8 @@ const authRoutes = require('./routes/authRoutes');
 const roleRoutes = require('./routes/roleRoutes');
 const moduleRoutes = require('./routes/moduleRoutes');
 const userRoutes = require('./routes/userRoutes');
+const leadRoutes = require('./routes/leadRoutes');
+const meetingRoutes = require('./routes/meetingRoutes');
 
 const app = express();
 
@@ -29,7 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/modules', moduleRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/leads', require('./routes/leadRoutes'));
+app.use('/api/leads', leadRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 app.get('/', async (req, res) => {
   res.json("WORKING");
