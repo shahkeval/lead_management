@@ -57,7 +57,7 @@ const MeetingCalendar = () => {
     const fetchMeetings = async () => {
         try {
             const token = localStorage.getItem('token');
-            const endpoint = user?.role?.roleName === "Admin"
+            const endpoint = user?.role?.visibleMeetings === "All"
                 ? `${process.env.REACT_APP_BASE_URL}api/meetings`
                 : `${process.env.REACT_APP_BASE_URL}api/meetings/get_persone_meeting`;
 
@@ -91,16 +91,14 @@ const MeetingCalendar = () => {
         }
     };
 
-    useEffect(() => {
-        fetchMeetings();
-        fetchUsers();
-        fetchClientNames();
-    }, [user]);
-
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users/list`, {
+            const endpoint = user?.role?.visibleMeetings === "Own" 
+                ? `${process.env.REACT_APP_BASE_URL}api/users/get_persone_user` 
+                : `${process.env.REACT_APP_BASE_URL}api/users/list`;
+
+            const response = await axios.get(endpoint, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUsers(response.data.users);
@@ -108,6 +106,20 @@ const MeetingCalendar = () => {
             showError(error.response?.data?.message || 'Failed to fetch users');
         }
     };
+
+    useEffect(() => {
+        fetchMeetings();
+        fetchUsers();
+    }, [user]);
+
+    useEffect(() => {
+        if (users.length === 1) {
+            setFormData((prevData) => ({
+                ...prevData,
+                representorName: users[0]._id // Auto-select the only user
+            }));
+        }
+    }, [users]);
 
     const fetchClientNames = async () => {
         try {
@@ -136,6 +148,7 @@ const MeetingCalendar = () => {
             date: moment(slotInfo.start).format('YYYY-MM-DD'),
             time: moment(slotInfo.start).format('HH:mm')
         });
+        fetchClientNames();
         setOpen(true);
     };
 
@@ -188,6 +201,41 @@ const MeetingCalendar = () => {
     const formatDate = (date) => moment(date).format('M/D/YYYY');
     const formatTime = (date) => moment(date).format('HH:mm');
 
+    const handleEdit = (event) => {
+        setFormData({
+            date: moment(event.start).format('YYYY-MM-DD'),
+            time: moment(event.start).format('HH:mm'),
+            attendeeName: event.clientName,
+            representorName: event.representorName._id,
+            agenda: event.agenda,
+            status: event.status
+        });
+        fetchClientNames();
+        setOpen(true);
+    };
+
+    const handleDelete = async (eventId) => {
+        if (window.confirm('Are you sure you want to delete this meeting?')) {
+            try {
+                const token = localStorage.getItem('token');
+                await axios.delete(`${process.env.REACT_APP_BASE_URL}api/meetings/${eventId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                showSuccess('Meeting deleted successfully');
+                fetchMeetings();
+            } catch (error) {
+                showError(error.response?.data?.message || 'Failed to delete meeting');
+            }
+        }
+    };
+    const canEdit = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "Schedule Meeting" && m.action === "update"
+      );
+      const canDelete = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "Schedule Meeting" && m.action === "delete"
+      );
+   
+    
     return (
         <Box sx={{ p: 2, height: '100vh', background: '#f9f9f9' }}>
             <BreadcrumbsComponent />
@@ -195,13 +243,37 @@ const MeetingCalendar = () => {
                 {/* Left: Meeting Details */}
                 <Grid item xs={12} md={3}>
                     <Paper elevation={1} sx={{ p: 3, height: '100%' }}>
-                        <Typography variant="h6" gutterBottom>
-                            Meeting Details
+                        <Typography variant="h6" gutterBottom sx={{ borderBottom: '2px solid #1976d2', pb: 1 }}>
+                            Meeting Details &nbsp;
                         </Typography>
+                        {selectedEvent && canEdit ? (
+                            <>
+                                <Button 
+                                    variant="outlined" 
+                                    color="primary" 
+                                    onClick={() => handleEdit(selectedEvent)}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Edit
+                                </Button>
+                            </>
+                        ) : null}
+                        {selectedEvent && canDelete ? (
+                            <Button 
+                                variant="outlined" 
+                                color="error" 
+                                onClick={() => handleDelete(selectedEvent.id)}
+                            >
+                                Delete
+                            </Button>
+                        ) : null}
+                        <Box></Box>
                         <Divider sx={{ mb: 2 }} />
                         {selectedEvent ? (
                             <>
-                                <Typography variant="subtitle2">Client Name</Typography>
+                                
+                                    <Typography variant="subtitle2">Client Name</Typography>
+                                
                                 <Typography variant="body2" gutterBottom>{selectedEvent.clientName}</Typography>
                                 <Typography variant="subtitle2">Representor Name</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.representorName?.userName}</Typography>
@@ -218,7 +290,7 @@ const MeetingCalendar = () => {
                             </>
                         ) : (
                             <Typography variant="body2" color="text.secondary">
-                                Select a meeting to see details or click on calendar to add new meeting.
+                                Select a meeting to see details or click on the calendar to add a new meeting.
                             </Typography>
                         )}
                     </Paper>
@@ -330,6 +402,7 @@ const MeetingCalendar = () => {
                                         value={formData.representorName}
                                         onChange={(e) => setFormData({ ...formData, representorName: e.target.value })}
                                         label="Representor"
+                                        disabled={users.length === 1}
                                     >
                                         {users.map((user) => (
                                             <MenuItem key={user._id} value={user._id}>

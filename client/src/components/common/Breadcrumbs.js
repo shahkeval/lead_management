@@ -25,6 +25,7 @@ const Breadcrumbs = () => {
     'schedule-lead': 'Schedule Lead',
     'meeting calendar': 'Meeting Calendar',
     'schedule': 'Schedule Meetings',
+    'change_password': 'Change password' 
   };
 
   const handleNavigation = (path) => {
@@ -64,19 +65,19 @@ const Breadcrumbs = () => {
     } else if (pathnames.includes('users')) {
       customPaths.push({
         path: '/admin/users',
-        label: 'Users',
+        label: 'User Management',
         isLast: true
       });
     } else if (pathnames.includes('leads')) {
       customPaths.push({
         path: '/leads',
-        label: 'Leads',
+        label: 'Lead management',
         isLast: true
       });
     }else if (pathnames.includes('meetings')) {
       customPaths.push({
         path: '/meetings',
-        label: 'Meetings',
+        label: 'Meeting management',
         isLast: true
       });
     }else if (pathnames.includes('schedule-lead')) {
@@ -88,11 +89,17 @@ const Breadcrumbs = () => {
     }else if (pathnames.includes('schedule')) {
       customPaths.push({
         path: '/schedule',
-        label: 'Meeting Calendar',
+        label: 'Schedule Meetings',
         isLast: true
       });
     }
-
+    else if (pathnames.includes('change_password')) {
+      customPaths.push({
+        path: '/change_password',
+        label: 'Change password',
+        isLast: true
+      });
+    }
     return customPaths;
   };
 

@@ -3,7 +3,7 @@ const Module = require('../models/Module');
 
 exports.createRole = async (req, res) => {
   try {
-    const { roleName, description, visibleLeads, status } = req.body;
+    const { roleName, description, visibleLeads, visibleMeetings, status } = req.body;
 
     // Check if role already exists
     const existingRole = await Role.findOne({ roleName });
@@ -19,6 +19,7 @@ exports.createRole = async (req, res) => {
       roleName,
       description,
       visibleLeads,
+      visibleMeetings,
       status
     });
 
@@ -54,7 +55,7 @@ exports.getRoles = async (req, res) => {
 
 exports.updateRole = async (req, res) => {
   try {
-    const { roleName, description, visibleLeads, isActive } = req.body;
+    const { roleName, description, visibleLeads, visibleMeetings, isActive } = req.body;
 
     // Find the existing role
     const role = await Role.findById(req.params.id);
@@ -66,10 +67,11 @@ exports.updateRole = async (req, res) => {
     }
 
     // Update only the fields that are provided
-    role.roleName = roleName || role.roleName; // Keep existing if not provided
-    role.description = description !== undefined ? description : role.description; // Preserve existing
-    role.visibleLeads = visibleLeads || role.visibleLeads; // Keep existing if not provided
-    role.isActive = isActive !== undefined ? isActive : role.isActive; // Preserve existing
+    role.roleName = roleName || role.roleName;
+    role.description = description !== undefined ? description : role.description;
+    role.visibleLeads = visibleLeads || role.visibleLeads;
+    role.visibleMeetings = visibleMeetings || role.visibleMeetings;
+    role.isActive = isActive !== undefined ? isActive : role.isActive;
 
     // Save the updated role
     await role.save();
@@ -119,7 +121,7 @@ exports.deleteRole = async (req, res) => {
 exports.updateRoleRights = async (req, res) => {
   try {
     const { roleId } = req.params;
-    const { assignedModules, visibleLeads, description, status } = req.body;
+    const { assignedModules, visibleLeads, visibleMeetings, description, status } = req.body;
 
     const role = await Role.findById(roleId);
     if (!role) {
@@ -129,11 +131,12 @@ exports.updateRoleRights = async (req, res) => {
       });
     }
 
-    // Update role's assigned modules, visible leads, and status
-    role.assignedModules = assignedModules; // Update assigned modules
-    role.visibleLeads = visibleLeads || role.visibleLeads; // Preserve existing if not provided
-    role.description = description !== undefined ? description : role.description; // Preserve existing
-    role.status = status !== undefined ? status : role.status; // Preserve existing
+    // Update role's assigned modules, visible leads, visible meetings, and status
+    role.assignedModules = assignedModules;
+    role.visibleLeads = visibleLeads || role.visibleLeads;
+    role.visibleMeetings = visibleMeetings || role.visibleMeetings;
+    role.description = description !== undefined ? description : role.description;
+    role.status = status !== undefined ? status : role.status;
     await role.save();
 
     const updatedRole = await Role.findById(roleId)

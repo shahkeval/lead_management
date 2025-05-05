@@ -15,6 +15,11 @@ const roleSchema = new mongoose.Schema({
     enum: ['Own', 'All'],
     default: 'Own'
   },
+  visibleMeetings: {
+    type: String,
+    enum: ['Own', 'All'],
+    default: 'Own'
+  },
   status: {
     type: String,
     enum: ['Active', 'Inactive'],

@@ -70,7 +70,7 @@ const MeetingManagement = () => {
     try {
       setIsRefetching(true);
       const token = localStorage.getItem('token');
-      const endpoint = user?.role?.roleName === "Admin"
+      const endpoint = user?.role?.visibleMeetings === "All"
       ? `${process.env.REACT_APP_BASE_URL}api/meetings`
       : `${process.env.REACT_APP_BASE_URL}api/meetings/get_persone_meeting`;
 
@@ -99,6 +99,22 @@ const MeetingManagement = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = user?.role?.visibleMeetings === "Own" 
+        ? `${process.env.REACT_APP_BASE_URL}api/users/get_persone_user` 
+        : `${process.env.REACT_APP_BASE_URL}api/users/list`;
+
+      const response = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(response.data.users);
+    } catch (error) {
+      showError(error.response?.data?.message || 'Failed to fetch users');
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -107,32 +123,17 @@ const MeetingManagement = () => {
     fetchMeetings();
   }, [columnFilters, globalFilter, pagination.pageIndex, pagination.pageSize, sorting]);
 
-  useEffect(() => {
-    const fetchClientNames = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/leads/clients`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.data.success) {
-          setClientNames(response.data.clients);
-        }
-      } catch (error) {
-        showError(error.response?.data?.message || 'Failed to fetch client names');
-      }
-    };
-    fetchClientNames();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchClientNames = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/users/list`, {
+      const response = await axios.get(`${process.env.REACT_APP_BASE_URL}api/leads/clients`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(response.data.users);
+      if (response.data.success) {
+        setClientNames(response.data.clients);
+      }
     } catch (error) {
-      showError(error.response?.data?.message || 'Failed to fetch users');
+      showError(error.response?.data?.message || 'Failed to fetch client names');
     }
   };
 
@@ -149,6 +150,14 @@ const MeetingManagement = () => {
     });
     setFieldErrors({});
     setAttendeeType('other');
+    fetchClientNames();
+
+    if (users.length === 1) {
+      setFormData((prevData) => ({
+        ...prevData,
+        representorName: users[0]._id
+      }));
+    }
   };
 
   const handleClose = () => {
@@ -493,6 +502,7 @@ const MeetingManagement = () => {
                     value={formData.representorName}
                     onChange={(e) => setFormData({ ...formData, representorName: e.target.value })}
                     label="Representor"
+                    disabled={users.length === 1}
                   >
                     {users.map((user) => (
                       <MenuItem key={user._id} value={user._id}>

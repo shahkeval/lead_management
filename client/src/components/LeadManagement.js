@@ -149,7 +149,7 @@ const LeadManagement = () => {
       const token = localStorage.getItem('token');
       if (!token) throw new Error("Your session has expired. Please log in again.");
 
-      const endpoint = user?.role?.roleName === "sales person" 
+      const endpoint = user?.role.visibleLeads === "Own" 
         ? `${process.env.REACT_APP_BASE_URL}api/users/get_persone_user` 
         : `${process.env.REACT_APP_BASE_URL}api/users/list`;
 
@@ -199,6 +199,14 @@ const LeadManagement = () => {
     setSelectedLead(null);
     setFormData(initialFormState);
     setOpenForm(true);
+
+    // Check if there's only one user and set selectedUser
+    if (users.length === 1) {
+        setFormData((prevData) => ({
+            ...prevData,
+            selectedUser: users[0]._id // Auto-select the only user
+        }));
+    }
   };
 
   const handleEditLead = (lead) => {
@@ -622,6 +630,7 @@ const LeadManagement = () => {
                   setFieldErrors(prev => ({ ...prev, selectedUser: '' }));
                 }}
                 inputProps={{ required: false }}
+                disabled={users.length === 1}
               >
                 {users.map((user) => (
                   <MenuItem key={user._id} value={user._id}>

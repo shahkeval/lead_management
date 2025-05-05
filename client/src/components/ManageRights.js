@@ -247,6 +247,7 @@ const ManageRights = () => {
     parentId: '',
   });
   const [visibleLeads, setVisibleLeads] = useState('Own');
+  const [visibleMeetings, setVisibleMeetings] = useState('Own');
   const [roleStatus, setRoleStatus] = useState('Active');
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -300,6 +301,7 @@ const ManageRights = () => {
 
       setRights(moduleRights);
       setVisibleLeads(role.visibleLeads);
+      setVisibleMeetings(role.visibleMeetings);
       setRoleStatus(role.status);
     }
   }, [role]);
@@ -347,7 +349,12 @@ const ManageRights = () => {
 
       const result = await dispatch(updateRoleRights({
         roleId,
-        data: { assignedModules: selectedModuleIds, visibleLeads, status: roleStatus }
+        data: { 
+          assignedModules: selectedModuleIds, 
+          visibleLeads, 
+          visibleMeetings,
+          status: roleStatus 
+        }
       })).unwrap();
 
       if (result.success) {
@@ -402,6 +409,19 @@ const ManageRights = () => {
             <Checkbox
               checked={visibleLeads === 'Own'}
               onChange={() => setVisibleLeads(visibleLeads === 'Own' ? 'All' : 'Own')}
+            />
+            <Typography variant="subtitle1">Own</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mr: 2 }}>Visible Meetings:</Typography>
+            <Checkbox
+              checked={visibleMeetings === 'All'}
+              onChange={() => setVisibleMeetings(visibleMeetings === 'All' ? 'Own' : 'All')}
+            />
+            <Typography variant="subtitle1" sx={{ mr: 1 }}>All</Typography>
+            <Checkbox
+              checked={visibleMeetings === 'Own'}
+              onChange={() => setVisibleMeetings(visibleMeetings === 'Own' ? 'All' : 'Own')}
             />
             <Typography variant="subtitle1">Own</Typography>
           </Box>

@@ -242,6 +242,7 @@ const ManageRoles = () => {
               <TableRow>
                 <TableCell sx={{ fontWeight: 'bold' }}>Role Name</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Visible Leads</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Visible Meetings</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Description</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
@@ -268,6 +269,11 @@ const ManageRoles = () => {
                       color: role.status === 'Inactive' ? '#666666' : 'inherit'
                     }}>
                       {role.visibleLeads}
+                    </TableCell>
+                    <TableCell sx={{
+                      color: role.status === 'Inactive' ? '#666666' : 'inherit'
+                    }}>
+                      {role.visibleMeetings}
                     </TableCell>
                     <TableCell sx={{
                       color: role.status === 'Inactive' ? '#666666' : 'inherit'

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { changePassword } from '../redux/slices/authSlice'; // Ensure this action is defined
 import {
@@ -10,6 +10,8 @@ import {
   Alert,
   Snackbar,
 } from '@mui/material';
+import BreadcrumbsComponent from './common/Breadcrumbs';
+
 import axios from 'axios';
 
 const ChangePassword = () => {
@@ -20,6 +22,11 @@ const ChangePassword = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Save the current path to local storage when the component mounts
+    localStorage.setItem('lastPath', '/change_password');
+  }, []); // Empty dependency array to run only on mount
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,10 +71,14 @@ const ChangePassword = () => {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
+    <Container component="main" maxWidth={false}>
+      <Box sx={{ mb: 2, marginTop:2}}>
+        <BreadcrumbsComponent />
+      </Box>
+
       <Box
         sx={{
-          marginTop: 8,
+          marginTop: 2,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -91,7 +102,7 @@ const ChangePassword = () => {
             {successMessage}
           </Alert>
         </Snackbar>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '30%' }}>
           <TextField
             margin="normal"
             required
