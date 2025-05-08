@@ -54,7 +54,8 @@ const MeetingManagement = () => {
 
   const [formData, setFormData] = useState({
     date: '',
-    time: '',
+    startTime: '',
+    endTime: '',
     attendeeName: '',
     representorName: '',
     agenda: '',
@@ -142,7 +143,8 @@ const MeetingManagement = () => {
     setEditingMeeting(null);
     setFormData({
       date: '',
-      time: '',
+      startTime: '',
+      endTime: '',
       attendeeName: '',
       representorName: '',
       agenda: '',
@@ -172,7 +174,8 @@ const MeetingManagement = () => {
     if (!formData.representorName) errors.representorName = 'Representor is required';
     if (!formData.agenda) errors.agenda = 'Agenda is required';
     if (!formData.date) errors.date = 'Date is required';
-    if (!formData.time) errors.time = 'Time is required';
+    if (!formData.startTime) errors.startTime = 'Start time is required';
+    if (!formData.endTime) errors.endTime = 'End time is required';
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -182,13 +185,23 @@ const MeetingManagement = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    // Prevent adding/updating meetings in the past
+    const meetingDate = new Date(formData.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (meetingDate < today) {
+      showError('Cannot add or update meetings in the past');
+      return;
+    }
+
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
       const meetingData = {
         ...formData,
         date: formData.date,
-        time: formData.time
+        startTime: formData.startTime,
+        endTime: formData.endTime
       };
 
       if (editingMeeting) {
@@ -208,10 +221,13 @@ const MeetingManagement = () => {
       }
       
       handleClose();
-      // Refresh the table data immediately
       await fetchMeetings();
     } catch (error) {
-      showError(error.response?.data?.message || 'Failed to save meeting');
+      if (error.response && error.response.data && error.response.data.message) {
+        showError(error.response.data.message);
+      } else {
+        showError('Failed to save meeting');
+      }
     } finally {
       setLoading(false);
     }
@@ -220,8 +236,9 @@ const MeetingManagement = () => {
   const handleEdit = (meeting) => {
     setEditingMeeting(meeting);
     setFormData({
-      date: meeting.date,
-      time: meeting.time,
+      date: new Date(meeting.date).toISOString().slice(0, 10),
+      startTime: meeting.startTime,
+      endTime: meeting.endTime,
       attendeeName: meeting.attendeeName,
       representorName: meeting.representorName._id,
       agenda: meeting.agenda,
@@ -255,8 +272,13 @@ const MeetingManagement = () => {
       enableGlobalFilter: true,
     },
     {
-      accessorKey: 'time',
-      header: 'Time',
+      accessorKey: 'startTime',
+      header: 'Start Time',
+      enableGlobalFilter: true,
+    },
+    {
+      accessorKey: 'endTime',
+      header: 'End Time',
       enableGlobalFilter: true,
     },
     {
@@ -346,6 +368,7 @@ const MeetingManagement = () => {
             variant="outlined" 
             size="small" 
             onClick={() => handleEdit(row.original)}
+            disabled={new Date(row.original.date) < new Date(new Date().setHours(0, 0, 0, 0))}
           >
             Edit
           </Button>
@@ -356,6 +379,7 @@ const MeetingManagement = () => {
             color="error" 
             size="small" 
             onClick={() => handleDelete(row.original._id)}
+            disabled={new Date(row.original.date) < new Date(new Date().setHours(0, 0, 0, 0))}
           >
             Delete
           </Button>
@@ -424,7 +448,7 @@ const MeetingManagement = () => {
         <DialogContent>
           <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   type="date"
@@ -438,15 +462,29 @@ const MeetingManagement = () => {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   type="time"
-                  label="Time"
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                  error={!!fieldErrors.time}
-                  helperText={fieldErrors.time}
+                  label="Start Time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  error={!!fieldErrors.startTime}
+                  helperText={fieldErrors.startTime}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  type="time"
+                  label="End Time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  error={!!fieldErrors.endTime}
+                  helperText={fieldErrors.endTime}
                   InputLabelProps={{
                     shrink: true,
                   }}

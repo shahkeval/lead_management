@@ -4,13 +4,49 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
+// Helper to compare time strings (HH:mm)
+function timeToMinutes(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
 exports.createMeeting = async (req, res) => {
   try {
-    const { date, time, attendeeName, representorName, agenda, status } = req.body;
+    const { date, startTime, endTime, attendeeName, representorName, agenda, status } = req.body;
     
+    // Check if meeting date is in the past
+    const meetingDate = new Date(date);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (meetingDate < currentDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Cannot create meetings in the past" 
+      });
+    }
+
+    // Conflict check
+    const conflict = await Meeting.findOne({
+      date: new Date(date),
+      representorName,
+      isDeleted: false,
+      $expr: {
+        $and: [
+          { $lt: [ "$startTime", endTime ] },
+          { $gt: [ "$endTime", startTime ] }
+        ]
+      }
+    });
+
+    if (conflict) {
+      return res.status(409).json({ success: false, message: "Meeting conflict: This person already has a meeting at this time." });
+    }
+
     const meeting = await Meeting.create({
       date,
-      time,
+      startTime,
+      endTime,
       attendeeName,
       representorName,
       agenda,
@@ -106,17 +142,45 @@ exports.getMeetings = async (req, res) => {
 exports.updateMeeting = async (req, res) => {
   try {
     const { id } = req.params;
-    const { date, time, attendeeName, representorName, agenda, status } = req.body;
+    const { date, startTime, endTime, representorName } = req.body;
+
+    // Check if meeting date is in the past
+    const meetingDate = new Date(date);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (meetingDate < currentDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Cannot modify meetings in the past" 
+      });
+    }
+
+    // Conflict check (exclude current meeting)
+    const conflict = await Meeting.findOne({
+      _id: { $ne: id },
+      date: new Date(date),
+      representorName,
+      isDeleted: false,
+      $expr: {
+        $and: [
+          { $lt: [ "$startTime", endTime ] },
+          { $gt: [ "$endTime", startTime ] }
+        ]
+      }
+    });
+
+    if (conflict) {
+      return res.status(409).json({ success: false, message: "Meeting conflict: This person already has a meeting at this time." });
+    }
 
     const meeting = await Meeting.findByIdAndUpdate(
       id,
       {
         date,
-        time,
-        attendeeName,
+        startTime,
+        endTime,
         representorName,
-        agenda,
-        status,
         updatedAt: Date.now()
       },
       { new: true }
@@ -145,18 +209,31 @@ exports.deleteMeeting = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const meeting = await Meeting.findByIdAndUpdate(
-      id,
-      { isDeleted: true, updatedAt: Date.now() },
-      { new: true }
-    );
-
+    // Check if meeting is in the past
+    const meeting = await Meeting.findById(id);
     if (!meeting) {
       return res.status(404).json({
         success: false,
         message: 'Meeting not found'
       });
     }
+
+    const meetingDate = new Date(meeting.date);
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
+    
+    if (meetingDate < currentDate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Cannot delete meetings in the past" 
+      });
+    }
+
+    const updatedMeeting = await Meeting.findByIdAndUpdate(
+      id,
+      { isDeleted: true, updatedAt: Date.now() },
+      { new: true }
+    );
 
     res.json({
       success: true,

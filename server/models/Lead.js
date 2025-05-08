@@ -30,6 +30,10 @@ const leadSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  descriptions: {
+    type: String,
+    default: ''
+  },
   leadStatus: {
     type: String,
     enum: ['Pending', 'Won', 'Follow Up', 'Lost'],

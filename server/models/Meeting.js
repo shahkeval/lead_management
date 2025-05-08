@@ -6,7 +6,11 @@ const meetingSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-  time: {
+  startTime: {
+    type: String,
+    required: true
+  },
+  endTime: {
     type: String,
     required: true
   },
@@ -23,7 +27,7 @@ const meetingSchema = new mongoose.Schema({
     type: String,
     required: true
   },
- status: {
+  status: {
     type: String,
     enum: ['Active', 'Inactive'],
     default: 'Active'

@@ -13,6 +13,7 @@ exports.createLead = async (req, res) => {
       sourceOfInquiry,
       leadStatus,
       companyName,
+      descriptions,
     } = req.body;
     const { lead_id } = req.params;
 
@@ -24,6 +25,7 @@ exports.createLead = async (req, res) => {
       sourceOfInquiry,
       leadStatus,
       companyName,
+      descriptions,
     });
 
     await newLead.save();
@@ -80,6 +82,7 @@ exports.getLeads = async (req, res) => {
         { companyName: { $regex: globalFilter, $options: 'i' } },
         { sourceOfInquiry: { $regex: globalFilter, $options: 'i' } },
         { leadStatus: { $regex: globalFilter, $options: 'i' } },
+        { descriptions: { $regex: globalFilter, $options: 'i' } },
         { empId: { $in: employeeIds } }, // Search by employee name
       ];
 

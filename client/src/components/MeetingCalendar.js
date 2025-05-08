@@ -35,22 +35,26 @@ const MeetingCalendar = () => {
     const [selectedEvent, setSelectedEvent] = useState(null);
     const { user } = useSelector((state) => state.auth);
     const { showError, showSuccess } = useAlerts();
-    const [open, setOpen] = useState(false);
+    const [openAdd, setOpenAdd] = useState(false);
+    const [openEdit, setOpenEdit] = useState(false);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [clientNames, setClientNames] = useState([]);
     const [attendeeType, setAttendeeType] = useState('other');
     const [selectedSlot, setSelectedSlot] = useState(null);
+    const [editingMeeting, setEditingMeeting] = useState(null);
 
-    const [formData, setFormData] = useState({
+    const initialFormData = {
         date: '',
-        time: '',
+        startTime: '',
+        endTime: '',
         attendeeName: '',
         representorName: '',
         agenda: '',
         status: 'Active'
-    });
+    };
 
+    const [formData, setFormData] = useState(initialFormData);
     const [fieldErrors, setFieldErrors] = useState({});
 
     // Fetch meetings from backend
@@ -67,23 +71,34 @@ const MeetingCalendar = () => {
             );
 
             if (res.data && res.data.meetings) {
-                const mappedEvents = res.data.meetings.map((meeting) => {
-                    const [hours, minutes] = meeting.time.split(':');
-                    const start = new Date(meeting.date);
-                    start.setHours(Number(hours), Number(minutes));
-                    const end = new Date(start.getTime() + 60 * 60 * 1000);
+                const mappedEvents = res.data.meetings
+                    .filter(meeting => meeting.startTime && meeting.endTime) // Only map valid meetings
+                    .map((meeting) => {
+                        const [startHours, startMinutes] = meeting.startTime.split(':');
+                        const [endHours, endMinutes] = meeting.endTime.split(':');
+                        const start = new Date(meeting.date);
+                        start.setHours(Number(startHours), Number(startMinutes), 0, 0);
+                        const end = new Date(meeting.date);
+                        end.setHours(Number(endHours), Number(endMinutes), 0, 0);
 
-                    return {
-                        id: meeting._id,
-                        title: meeting.agenda,
-                        clientName: meeting.attendeeName,
-                        agenda: meeting.agenda,
-                        status: meeting.status,
-                        representorName: meeting.representorName,
-                        start,
-                        end,
-                    };
-                });
+                        // Defensive: If start or end is invalid, skip this event
+                        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                            console.warn('Invalid meeting time:', meeting);
+                            return null;
+                        }
+
+                        return {
+                            id: meeting._id,
+                            title: meeting.agenda,
+                            clientName: meeting.attendeeName,
+                            agenda: meeting.agenda,
+                            status: meeting.status,
+                            representorName: meeting.representorName,
+                            start,
+                            end,
+                        };
+                    })
+                    .filter(Boolean); // Remove nulls
                 setEvents(mappedEvents);
             }
         } catch (err) {
@@ -141,20 +156,32 @@ const MeetingCalendar = () => {
     };
 
     const handleSelectSlot = (slotInfo) => {
-        setSelectedEvent(null);
-        setSelectedSlot(slotInfo);
-        setFormData({
-            ...formData,
-            date: moment(slotInfo.start).format('YYYY-MM-DD'),
-            time: moment(slotInfo.start).format('HH:mm')
-        });
-        fetchClientNames();
-        setOpen(true);
+        if (!slotInfo.event) {
+            setSelectedEvent(null);
+            setSelectedSlot(slotInfo);
+            const startTime = moment(slotInfo.start).format('HH:mm');
+            const endTime = moment(slotInfo.end).format('HH:mm');
+            setFormData({
+                ...formData,
+                date: moment(slotInfo.start).format('YYYY-MM-DD'),
+                startTime,
+                endTime
+            });
+            fetchClientNames();
+            setOpenAdd(true);
+        }
     };
 
-    const handleClose = () => {
-        setOpen(false);
+    const handleCloseAdd = () => {
+        setOpenAdd(false);
         setFieldErrors({});
+        setFormData(initialFormData);
+    };
+
+    const handleCloseEdit = () => {
+        setOpenEdit(false);
+        setFieldErrors({});
+        setFormData(initialFormData);
     };
 
     const validateForm = () => {
@@ -163,7 +190,8 @@ const MeetingCalendar = () => {
         if (!formData.representorName) errors.representorName = 'Representor is required';
         if (!formData.agenda) errors.agenda = 'Agenda is required';
         if (!formData.date) errors.date = 'Date is required';
-        if (!formData.time) errors.time = 'Time is required';
+        if (!formData.startTime) errors.startTime = 'Start time is required';
+        if (!formData.endTime) errors.endTime = 'End time is required';
 
         setFieldErrors(errors);
         return Object.keys(errors).length === 0;
@@ -179,16 +207,28 @@ const MeetingCalendar = () => {
             const meetingData = {
                 ...formData,
                 date: formData.date,
-                time: formData.time
+                startTime: formData.startTime,
+                endTime: formData.endTime
             };
 
-            await axios.post(
-                `${process.env.REACT_APP_BASE_URL}api/meetings`,
-                meetingData,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            showSuccess('Meeting created successfully');
-            handleClose();
+            if (selectedEvent) { // If editing
+                await axios.put(
+                    `${process.env.REACT_APP_BASE_URL}api/meetings/${selectedEvent.id}`,
+                    meetingData,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                showSuccess('Meeting updated successfully');
+            } else { // If adding
+                await axios.post(
+                    `${process.env.REACT_APP_BASE_URL}api/meetings`,
+                    meetingData,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                showSuccess('Meeting created successfully');
+            }
+            
+            handleCloseAdd();
+            handleCloseEdit();
             fetchMeetings();
         } catch (error) {
             showError(error.response?.data?.message || 'Failed to save meeting');
@@ -197,21 +237,18 @@ const MeetingCalendar = () => {
         }
     };
 
-    // Helper to format date and time
-    const formatDate = (date) => moment(date).format('M/D/YYYY');
-    const formatTime = (date) => moment(date).format('HH:mm');
-
     const handleEdit = (event) => {
+        setEditingMeeting(event);
         setFormData({
             date: moment(event.start).format('YYYY-MM-DD'),
-            time: moment(event.start).format('HH:mm'),
+            startTime: moment(event.start).format('HH:mm'),
+            endTime: moment(event.end).format('HH:mm'),
             attendeeName: event.clientName,
             representorName: event.representorName._id,
             agenda: event.agenda,
             status: event.status
         });
-        fetchClientNames();
-        setOpen(true);
+        setOpenEdit(true);
     };
 
     const handleDelete = async (eventId) => {
@@ -228,14 +265,40 @@ const MeetingCalendar = () => {
             }
         }
     };
+
+    // Helper to format date and time
+    const formatDate = (date) => moment(date).format('M/D/YYYY');
+    const formatTime = (date) => moment(date).format('HH:mm');
+
+    // User permissions
     const canEdit = user?.role?.assignedModules?.some(
-        (m) => m.moduleName === "Schedule Meeting" && m.action === "update"
-      );
-      const canDelete = user?.role?.assignedModules?.some(
-        (m) => m.moduleName === "Schedule Meeting" && m.action === "delete"
-      );
-   
-    
+        (m) => m.moduleName === "meeting management" && m.action === "update"
+    );
+    const canDelete = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "meeting management" && m.action === "delete"
+    );
+    const canCreate = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "meeting management" && m.action === "create"
+    );
+    const canList = user?.role?.assignedModules?.some(
+        (m) => m.moduleName === "meeting management" && m.action === "list"
+    );
+
+    // Add a new function to handle edit button click
+    const handleEditClick = (event) => {
+        setFormData({
+            date: moment(event.start).format('YYYY-MM-DD'),
+            startTime: moment(event.start).format('HH:mm'),
+            endTime: moment(event.end).format('HH:mm'),
+            attendeeName: event.clientName,
+            representorName: event.representorName._id,
+            agenda: event.agenda,
+            status: event.status
+        });
+        fetchClientNames();
+        setOpenEdit(true);
+    };
+
     return (
         <Box sx={{ p: 2, height: '100vh', background: '#f9f9f9' }}>
             <BreadcrumbsComponent />
@@ -252,6 +315,7 @@ const MeetingCalendar = () => {
                                     variant="outlined" 
                                     color="primary" 
                                     onClick={() => handleEdit(selectedEvent)}
+                                    disabled={new Date(selectedEvent.start) < new Date(new Date().setHours(0, 0, 0, 0))}
                                     sx={{ mr: 1 }}
                                 >
                                     Edit
@@ -263,6 +327,7 @@ const MeetingCalendar = () => {
                                 variant="outlined" 
                                 color="error" 
                                 onClick={() => handleDelete(selectedEvent.id)}
+                                disabled={new Date(selectedEvent.start) < new Date(new Date().setHours(0, 0, 0, 0))}
                             >
                                 Delete
                             </Button>
@@ -271,16 +336,16 @@ const MeetingCalendar = () => {
                         <Divider sx={{ mb: 2 }} />
                         {selectedEvent ? (
                             <>
-                                
-                                    <Typography variant="subtitle2">Client Name</Typography>
-                                
+                                <Typography variant="subtitle2">Client Name</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.clientName}</Typography>
                                 <Typography variant="subtitle2">Representor Name</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.representorName?.userName}</Typography>
                                 <Typography variant="subtitle2">Date</Typography>
                                 <Typography variant="body2" gutterBottom>{formatDate(selectedEvent.start)}</Typography>
-                                <Typography variant="subtitle2">Time</Typography>
+                                <Typography variant="subtitle2">Start Time</Typography>
                                 <Typography variant="body2" gutterBottom>{formatTime(selectedEvent.start)}</Typography>
+                                <Typography variant="subtitle2">End Time</Typography>
+                                <Typography variant="body2" gutterBottom>{formatTime(selectedEvent.end)}</Typography>
                                 <Typography variant="subtitle2">Agenda</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.agenda}</Typography>
                                 <Typography variant="subtitle2">Status</Typography>
@@ -320,12 +385,12 @@ const MeetingCalendar = () => {
             </Grid>
 
             {/* Add Meeting Dialog */}
-            <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+            <Dialog open={openAdd} onClose={handleCloseAdd} maxWidth="md" fullWidth>
                 <DialogTitle>Add New Meeting</DialogTitle>
                 <DialogContent>
                     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
                         <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6}>
+                            <Grid item xs={12} sm={4}>
                                 <TextField
                                     fullWidth
                                     type="date"
@@ -339,15 +404,29 @@ const MeetingCalendar = () => {
                                     }}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid item xs={12} sm={4}>
                                 <TextField
                                     fullWidth
                                     type="time"
-                                    label="Time"
-                                    value={formData.time}
-                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                    error={!!fieldErrors.time}
-                                    helperText={fieldErrors.time}
+                                    label="Start Time"
+                                    value={formData.startTime}
+                                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                                    error={!!fieldErrors.startTime}
+                                    helperText={fieldErrors.startTime}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    fullWidth
+                                    type="time"
+                                    label="End Time"
+                                    value={formData.endTime}
+                                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                                    error={!!fieldErrors.endTime}
+                                    helperText={fieldErrors.endTime}
                                     InputLabelProps={{
                                         shrink: true,
                                     }}
@@ -444,7 +523,153 @@ const MeetingCalendar = () => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleClose}>Cancel</Button>
+                    <Button onClick={handleCloseAdd}>Cancel</Button>
+                    <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+                        {loading ? 'Saving...' : 'Save'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Meeting Dialog */}
+            <Dialog open={openEdit} onClose={handleCloseEdit} maxWidth="md" fullWidth>
+                <DialogTitle>{editingMeeting ? 'Edit Meeting' : 'Add New Meeting'}</DialogTitle>
+                <DialogContent>
+                    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
+                        <Grid container spacing={2}>
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    fullWidth
+                                    type="date"
+                                    label="Date"
+                                    value={formData.date}
+                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                    error={!!fieldErrors.date}
+                                    helperText={fieldErrors.date}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    fullWidth
+                                    type="time"
+                                    label="Start Time"
+                                    value={formData.startTime}
+                                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                                    error={!!fieldErrors.startTime}
+                                    helperText={fieldErrors.startTime}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    fullWidth
+                                    type="time"
+                                    label="End Time"
+                                    value={formData.endTime}
+                                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                                    error={!!fieldErrors.endTime}
+                                    helperText={fieldErrors.endTime}
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <FormControl component="fieldset">
+                                    <RadioGroup
+                                        row
+                                        value={attendeeType}
+                                        onChange={(e) => setAttendeeType(e.target.value)}
+                                    >
+                                        <FormControlLabel value="other" control={<Radio />} label="Other" />
+                                        <FormControlLabel value="registered" control={<Radio />} label="Registered Attendee" />
+                                    </RadioGroup>
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12}>
+                                {attendeeType === 'registered' ? (
+                                    <FormControl fullWidth error={!!fieldErrors.attendeeName}>
+                                        <InputLabel>Attendee Name</InputLabel>
+                                        <Select
+                                            value={formData.attendeeName}
+                                            onChange={(e) => setFormData({ ...formData, attendeeName: e.target.value })}
+                                            label="Attendee Name"
+                                        >
+                                            {clientNames.map((name) => (
+                                                <MenuItem key={name} value={name}>
+                                                    {name}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                        {fieldErrors.attendeeName && (
+                                            <FormHelperText>{fieldErrors.attendeeName}</FormHelperText>
+                                        )}
+                                    </FormControl>
+                                ) : (
+                                    <TextField
+                                        fullWidth
+                                        label="Attendee Name"
+                                        value={formData.attendeeName}
+                                        onChange={(e) => setFormData({ ...formData, attendeeName: e.target.value })}
+                                        error={!!fieldErrors.attendeeName}
+                                        helperText={fieldErrors.attendeeName}
+                                    />
+                                )}
+                            </Grid>
+                            <Grid item xs={12}>
+                                <FormControl fullWidth error={!!fieldErrors.representorName}>
+                                    <InputLabel>Representor</InputLabel>
+                                    <Select
+                                        value={formData.representorName}
+                                        onChange={(e) => setFormData({ ...formData, representorName: e.target.value })}
+                                        label="Representor"
+                                        disabled={users.length === 1}
+                                    >
+                                        {users.map((user) => (
+                                            <MenuItem key={user._id} value={user._id}>
+                                                {user.userName}
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                    {fieldErrors.representorName && (
+                                        <FormHelperText>{fieldErrors.representorName}</FormHelperText>
+                                    )}
+                                </FormControl>
+                            </Grid>
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Agenda"
+                                    multiline
+                                    rows={4}
+                                    value={formData.agenda}
+                                    onChange={(e) => setFormData({ ...formData, agenda: e.target.value })}
+                                    error={!!fieldErrors.agenda}
+                                    helperText={fieldErrors.agenda}
+                                />
+                            </Grid>
+                            <Grid item xs={12}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Status</InputLabel>
+                                    <Select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        label="Status"
+                                    >
+                                        <MenuItem value="Active">Active</MenuItem>
+                                        <MenuItem value="Inactive">Inactive</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+                        </Grid>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseEdit}>Cancel</Button>
                     <Button onClick={handleSubmit} variant="contained" disabled={loading}>
                         {loading ? 'Saving...' : 'Save'}
                     </Button>

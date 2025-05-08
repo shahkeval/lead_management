@@ -52,6 +52,7 @@ const LeadManagement = () => {
     leadStatus: 'Pending',
     companyName: '',
     selectedUser: '',
+    descriptions: '',
   });
   const [users, setUsers] = useState([]);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -81,6 +82,7 @@ const LeadManagement = () => {
     leadStatus: "Pending",
     companyName: "",
     selectedUser: "",
+    descriptions: "",
   };
 
   const [debounceTimeout, setDebounceTimeout] = useState(null);
@@ -98,7 +100,8 @@ const LeadManagement = () => {
     sourceOfInquiry: '',
     companyName: '',
     selectedUser: '',
-    leadStatus: ''
+    leadStatus: '',
+    descriptions: ''
   });
 
   const { showError, showSuccess } = useAlerts();
@@ -219,6 +222,7 @@ const LeadManagement = () => {
       leadStatus: lead.leadStatus || "Pending",
       companyName: lead.companyName || "",
       selectedUser: lead.empId?._id || "",
+      descriptions: lead.descriptions || "",
     });
     setOpenForm(true);
   };
@@ -275,7 +279,8 @@ const LeadManagement = () => {
         sourceOfInquiry: '',
         companyName: '',
         selectedUser: '',
-        leadStatus: ''
+        leadStatus: '',
+        descriptions: ''
       });
 
       // Validate required fields
@@ -307,6 +312,7 @@ const LeadManagement = () => {
         sourceOfInquiry: formData.sourceOfInquiry,
         leadStatus: formData.leadStatus,
         companyName: formData.companyName,
+        descriptions: formData.descriptions,
       };
 
       if (selectedLead) {
@@ -422,6 +428,11 @@ const LeadManagement = () => {
     {
       accessorKey: 'sourceOfInquiry',
       header: 'Source',
+      enableGlobalFilter: true,
+    },
+    {
+      accessorKey: 'descriptions',
+      header: 'Description',
       enableGlobalFilter: true,
     },
     {
@@ -615,6 +626,21 @@ const LeadManagement = () => {
               error={!!fieldErrors.companyName}
               helperText={fieldErrors.companyName}
               inputProps={{ required: false }}
+            />
+            <TextField
+              label="Description"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.descriptions}
+              onChange={(e) => {
+                setFormData({ ...formData, descriptions: e.target.value });
+                setFieldErrors(prev => ({ ...prev, descriptions: '' }));
+              }}
+              multiline
+              rows={4}
+              error={!!fieldErrors.descriptions}
+              helperText={fieldErrors.descriptions}
             />
             <FormControl 
               fullWidth 

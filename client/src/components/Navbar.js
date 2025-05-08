@@ -8,9 +8,11 @@ import {
   Typography,
   Button,
   Box,
+  Tooltip,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Link } from 'react-router-dom';
+import ChangePasswordIcon from '@mui/icons-material/Lock';
 
 const Navbar = () => {
   const dispatch = useDispatch();
@@ -21,6 +23,14 @@ const Navbar = () => {
     dispatch(logout());
     navigate('/login');
   };
+
+  const handleChangePassword = () => {
+    navigate('/change_password');
+  };
+
+  const canChangePassword = user?.role?.assignedModules?.some(
+    (m) => m.moduleName === "change password" && m.action === "view"
+  );
 
   return (
     <AppBar position="static">
@@ -36,13 +46,24 @@ const Navbar = () => {
         <Typography variant="body1" style={{ marginRight: '20px', color: 'white' }}>
             {user?.role?.roleName}
           </Typography>
-        <Button 
-          color="inherit" 
-          onClick={handleLogout}
-          startIcon={<LogoutIcon />}
-        >
-          Sign Out
-        </Button>
+        {canChangePassword && (
+          <Tooltip title="Change Password">
+            <Button 
+              color="inherit" 
+              onClick={handleChangePassword}
+              startIcon={<ChangePasswordIcon />}
+            >
+            </Button>
+          </Tooltip>
+        )}
+        <Tooltip title="Sign Out">
+          <Button 
+            color="inherit" 
+            onClick={handleLogout}
+            startIcon={<LogoutIcon />}
+          >
+          </Button>
+        </Tooltip>
       </Toolbar>
     </AppBar>
   );

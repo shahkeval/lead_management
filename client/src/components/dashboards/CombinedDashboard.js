@@ -95,12 +95,12 @@ const CombinedDashboard = () => {
         },
     ];
 
-    const handleChangePassword = () => {
-        navigate('/change_password'); // Navigate to Change Password page
-    };
-    const canChangePassword = user?.role?.assignedModules?.some(
-        (m) => m.moduleName === "change password" && m.action === "view"
-    );
+    // const handleChangePassword = () => {
+    //     navigate('/change_password'); // Navigate to Change Password page
+    // };
+    // const canChangePassword = user?.role?.assignedModules?.some(
+    //     (m) => m.moduleName === "change password" && m.action === "view"
+    // );
     return (
         <div>
             <GlobalAlerts />
@@ -131,7 +131,7 @@ const CombinedDashboard = () => {
 
                              
 
-                                {canChangePassword ? ( <Button
+                                {/* {canChangePassword ? ( <Button
                                     variant="contained"
                                     color="primary"
                                     onClick={handleChangePassword}
@@ -139,7 +139,7 @@ const CombinedDashboard = () => {
                                 >
                                     Change Password
                                 </Button>): ("")}
-                               
+                                */}
 
 
                             </Grid>
@@ -193,14 +193,14 @@ const CombinedDashboard = () => {
 
                              
 
-                                {canChangePassword ? ( <Button
+                                {/* {canChangePassword ? ( <Button
                                     variant="contained"
                                     color="primary"
                                     onClick={handleChangePassword}
 
                                 >
                                     Change Password
-                                </Button>): ("")}
+                                </Button>): ("")} */}
                                
 
 
@@ -253,14 +253,14 @@ const CombinedDashboard = () => {
 
                              
 
-                                {canChangePassword ? ( <Button
+                                {/* {canChangePassword ? ( <Button
                                     variant="contained"
                                     color="primary"
                                     onClick={handleChangePassword}
 
                                 >
                                     Change Password
-                                </Button>): ("")}
+                                </Button>): ("")} */}
                                
 
 
