@@ -67,6 +67,26 @@ const MeetingManagement = () => {
   const [attendeeType, setAttendeeType] = useState('other');
   const [clientNames, setClientNames] = useState([]);
 
+  const isMeetingPastOrEnded = (date, endTime) => {
+    const meetingDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (meetingDate < today) return true;
+    if (meetingDate.toDateString() === today.toDateString()) {
+      // Compare endTime with current time
+      const [endHour, endMinute] = endTime.split(':').map(Number);
+      const now = new Date();
+      if (
+        now.getHours() > endHour ||
+        (now.getHours() === endHour && now.getMinutes() >= endMinute)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const fetchMeetings = async () => {
     try {
       setIsRefetching(true);
@@ -185,12 +205,8 @@ const MeetingManagement = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // Prevent adding/updating meetings in the past
-    const meetingDate = new Date(formData.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (meetingDate < today) {
-      showError('Cannot add or update meetings in the past');
+    if (isMeetingPastOrEnded(formData.date, formData.endTime)) {
+      showError('Cannot add or update meetings in the past or already ended today');
       return;
     }
 
@@ -368,7 +384,7 @@ const MeetingManagement = () => {
             variant="outlined" 
             size="small" 
             onClick={() => handleEdit(row.original)}
-            disabled={new Date(row.original.date) < new Date(new Date().setHours(0, 0, 0, 0))}
+            disabled={isMeetingPastOrEnded(row.original.date, row.original.endTime)}
           >
             Edit
           </Button>
@@ -379,7 +395,7 @@ const MeetingManagement = () => {
             color="error" 
             size="small" 
             onClick={() => handleDelete(row.original._id)}
-            disabled={new Date(row.original.date) < new Date(new Date().setHours(0, 0, 0, 0))}
+            disabled={isMeetingPastOrEnded(row.original.date, row.original.endTime)}
           >
             Delete
           </Button>

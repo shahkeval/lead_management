@@ -172,6 +172,22 @@ const MeetingCalendar = () => {
         }
     };
 
+    const handleOpenAdd = () => {
+        setOpenAdd(true);
+        setEditingMeeting(null);
+        setFormData(initialFormData);
+        setFieldErrors({});
+        setAttendeeType('other');
+        fetchClientNames();
+
+        if (users.length === 1) {
+            setFormData((prevData) => ({
+                ...prevData,
+                representorName: users[0]._id // Auto-select the only user
+            }));
+        }
+    };
+
     const handleCloseAdd = () => {
         setOpenAdd(false);
         setFieldErrors({});
@@ -197,9 +213,35 @@ const MeetingCalendar = () => {
         return Object.keys(errors).length === 0;
     };
 
+    // Helper to check if a meeting is past or already ended today
+    const isMeetingPastOrEnded = (date, endTime) => {
+        const meetingDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (meetingDate < today) return true;
+        if (meetingDate.toDateString() === today.toDateString()) {
+            const [endHour, endMinute] = endTime.split(':').map(Number);
+            const now = new Date();
+            if (
+                now.getHours() > endHour ||
+                (now.getHours() === endHour && now.getMinutes() >= endMinute)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+
+        // Prevent adding/updating meetings in the past or already ended today
+        if (isMeetingPastOrEnded(formData.date, formData.endTime)) {
+            showError('Cannot add or update meetings in the past or already ended today');
+            return;
+        }
 
         try {
             setLoading(true);
@@ -315,7 +357,7 @@ const MeetingCalendar = () => {
                                     variant="outlined" 
                                     color="primary" 
                                     onClick={() => handleEdit(selectedEvent)}
-                                    disabled={new Date(selectedEvent.start) < new Date(new Date().setHours(0, 0, 0, 0))}
+                                    disabled={isMeetingPastOrEnded(selectedEvent.start, moment(selectedEvent.end).format('HH:mm'))}
                                     sx={{ mr: 1 }}
                                 >
                                     Edit
@@ -327,7 +369,7 @@ const MeetingCalendar = () => {
                                 variant="outlined" 
                                 color="error" 
                                 onClick={() => handleDelete(selectedEvent.id)}
-                                disabled={new Date(selectedEvent.start) < new Date(new Date().setHours(0, 0, 0, 0))}
+                                disabled={isMeetingPastOrEnded(selectedEvent.start, moment(selectedEvent.end).format('HH:mm'))}
                             >
                                 Delete
                             </Button>

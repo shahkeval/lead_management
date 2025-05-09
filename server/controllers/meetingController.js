@@ -10,19 +10,33 @@ function timeToMinutes(t) {
   return h * 60 + m;
 }
 
+function isMeetingPastOrEnded(date, endTime) {
+  const meetingDate = new Date(date);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (meetingDate < today) return true;
+  if (meetingDate.toDateString() === today.toDateString()) {
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    const now = new Date();
+    if (
+      now.getHours() > endHour ||
+      (now.getHours() === endHour && now.getMinutes() >= endMinute)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 exports.createMeeting = async (req, res) => {
   try {
     const { date, startTime, endTime, attendeeName, representorName, agenda, status } = req.body;
     
-    // Check if meeting date is in the past
-    const meetingDate = new Date(date);
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
-    
-    if (meetingDate < currentDate) {
+    if (isMeetingPastOrEnded(date, endTime)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Cannot create meetings in the past" 
+        message: "Cannot create meetings in the past or already ended today" 
       });
     }
 
@@ -144,15 +158,10 @@ exports.updateMeeting = async (req, res) => {
     const { id } = req.params;
     const { date, startTime, endTime, representorName } = req.body;
 
-    // Check if meeting date is in the past
-    const meetingDate = new Date(date);
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
-    
-    if (meetingDate < currentDate) {
+    if (isMeetingPastOrEnded(date, endTime)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Cannot modify meetings in the past" 
+        message: "Cannot modify meetings in the past or already ended today" 
       });
     }
 
@@ -218,14 +227,10 @@ exports.deleteMeeting = async (req, res) => {
       });
     }
 
-    const meetingDate = new Date(meeting.date);
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Reset time to start of day
-    
-    if (meetingDate < currentDate) {
+    if (isMeetingPastOrEnded(meeting.date, meeting.endTime)) {
       return res.status(400).json({ 
         success: false, 
-        message: "Cannot delete meetings in the past" 
+        message: "Cannot delete meetings in the past or already ended today" 
       });
     }
 
