@@ -380,7 +380,7 @@ const MeetingCalendar = () => {
                             <>
                                 <Typography variant="subtitle2">Client Name</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.clientName}</Typography>
-                                <Typography variant="subtitle2">Representor Name</Typography>
+                                <Typography variant="subtitle2">Employee Name</Typography>
                                 <Typography variant="body2" gutterBottom>{selectedEvent.representorName?.userName}</Typography>
                                 <Typography variant="subtitle2">Date</Typography>
                                 <Typography variant="body2" gutterBottom>{formatDate(selectedEvent.start)}</Typography>
