@@ -15,6 +15,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import { useAlerts } from '../context/AlertContext';
 import GlobalAlerts from './common/GlobalAlerts';
+import logo from '../assets/jarvis_leaad_logo.png';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -86,6 +87,7 @@ const Login = () => {
           alignItems: 'center',
         }}
       >
+        <img src={logo} alt="Logo" style={{ width: '150px', marginBottom: '20px' }} />
         <Typography component="h1" variant="h5">
           Sign in
         </Typography>

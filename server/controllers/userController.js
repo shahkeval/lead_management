@@ -28,9 +28,9 @@ exports.getUsers = async (req, res) => {
     if (req.query.globalFilter) {
       const globalSearch = new RegExp(req.query.globalFilter, 'i');
       query.$or = [
-        { user_name: globalSearch },
+        { userName: globalSearch },
         { email: globalSearch },
-        { mobile_name: globalSearch },
+        { mobileName: globalSearch },
         { status: globalSearch }
       ];
     }
@@ -68,7 +68,7 @@ exports.getUsers = async (req, res) => {
 };
 exports.getForLead = async(req,res)=>{
   try {
-        const isers = await User.find().select('user_name email mobile');
+        const isers = await User.find().select('userName email mobileName');
         res.json({success:true,users});   
   } catch (error) {
     res.status(500).json({
@@ -79,7 +79,7 @@ exports.getForLead = async(req,res)=>{
 }
 exports.createUser = async (req, res) => {
   try {
-    const { email, password, roleId, status, user_name, mobile_name } = req.body;
+    const { email, password, roleId, status, userName, mobileName } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -103,8 +103,8 @@ exports.createUser = async (req, res) => {
     const user = await User.create({
       email,
       password,
-      user_name,
-      mobile_name,
+      userName,
+      mobileName,
       role: roleId,
       status,
     });
@@ -130,7 +130,7 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { email, user_name, mobile_name, roleId, status } = req.body;
+    const { email, userName, mobileName, roleId, status } = req.body;
     const userId = req.params.id;
 
     // Check if user exists
@@ -159,8 +159,8 @@ exports.updateUser = async (req, res) => {
       userId,
       {
         email,
-        user_name,
-        mobile_name,
+        userName,
+        mobileName,
         role: roleId,
         status,
         updatedAt: Date.now()

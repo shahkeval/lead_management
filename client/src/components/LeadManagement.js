@@ -36,6 +36,7 @@ import useFormError from '../hooks/useFormError';
 import SuccessAlert from './common/SuccessAlert';
 import useAlerts from '../hooks/useAlerts';
 import GlobalAlerts from './common/GlobalAlerts';
+import TablePagination from '@mui/material/TablePagination';
 
 const LeadManagement = () => {
   const [leads, setLeads] = useState([]);
@@ -486,7 +487,12 @@ const LeadManagement = () => {
       },
     },
     muiTablePaginationProps: {
-      rowsPerPageOptions: [5, 10, 25],
+      component: (props) => (
+        <TablePagination
+          {...props}
+          rowsPerPageOptions={[5, 15, 25, 30]}
+        />
+      ),
     },
     renderTopToolbarCustomActions: () => (
       canCreate && (

@@ -7,6 +7,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';  // theme
 import 'primereact/resources/primereact.min.css';                  // core css
 import 'primeicons/primeicons.css';  
 import { AlertProvider } from './context/AlertContext';
+import Footer from './components/Footer';
 
 function App() {
     const dispatch = useDispatch();
@@ -25,6 +26,7 @@ function App() {
         <AlertProvider>
             <Router>
                 <AppContent />
+                <Footer />
             </Router>
         </AlertProvider>
     );

@@ -111,11 +111,11 @@ const ForgotPassword = () => {
           >
             Send Reset Link
           </Button>
-          <Box textAlign="center">
+          {/* <Box textAlign="center">
             <RouterLink to="/login" style={{ textDecoration: 'none', color: 'primary.main' }}>
               Remembered your password? Sign in
             </RouterLink>
-          </Box>
+          </Box> */}
         </Box>
       </Box>
     </Container>

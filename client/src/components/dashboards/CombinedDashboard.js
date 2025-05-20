@@ -22,30 +22,6 @@ const CombinedDashboard = () => {
 
     const menuItems = [
         {
-            title: 'Manage Roles',
-            description: 'Create and manage user roles and permissions',
-            action: () => {
-                if (!user.role.assignedModules.some(module => module.moduleName === 'manage roles')) {
-                    showError("You don't have permission to access Manage Roles.");
-                    return;
-                }
-                navigate('/admin/manage-roles');
-            },
-            allowed: user.role.assignedModules.some(module => module.moduleName === 'manage roles'),
-        },
-        {
-            title: 'User Management',
-            description: 'Manage system users and their roles',
-            action: () => {
-                if (!user.role.assignedModules.some(module => module.moduleName === 'user management')) {
-                    showError("You don't have permission to access User Management.");
-                    return;
-                }
-                navigate('/admin/users');
-            },
-            allowed: user.role.assignedModules.some(module => module.moduleName === 'user management'),
-        },
-        {
             title: 'Lead Management',
             description: 'Manage leads',
             action: () => {
@@ -81,6 +57,33 @@ const CombinedDashboard = () => {
             },
             allowed: user.role.assignedModules.some(module => module.moduleName === 'Schedule Meeting'),
         },
+        {
+            title: 'Manage Roles',
+            description: 'Create and manage user roles and permissions',
+            action: () => {
+                if (!user.role.assignedModules.some(module => module.moduleName === 'manage roles')) {
+                    showError("You don't have permission to access Manage Roles.");
+                    return;
+                }
+                navigate('/admin/manage-roles');
+            },
+            allowed: user.role.assignedModules.some(module => module.moduleName === 'manage roles'),
+        },
+        {
+            title: 'User Management',
+            description: 'Manage system users and their roles',
+            action: () => {
+                if (!user.role.assignedModules.some(module => module.moduleName === 'user management')) {
+                    showError("You don't have permission to access User Management.");
+                    return;
+                }
+                navigate('/admin/users');
+            },
+            allowed: user.role.assignedModules.some(module => module.moduleName === 'user management'),
+        },
+       
+      
+      
         {
             title: 'Reports',
             description: 'View and generate system reports',

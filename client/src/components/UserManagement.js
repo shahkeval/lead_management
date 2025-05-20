@@ -429,8 +429,8 @@ const EditUserForm = ({ open, handleClose, user, onUserUpdated }) => {
               }}
             />
             <TextField
-              label="Mobile Number"
-              name="mobile_name"
+              label="Mobile Numbber"
+              name="mobileName"
               value={formData.mobileName}
               onChange={handleChange}
               fullWidth
@@ -666,7 +666,7 @@ const UserManagement = () => {
       },
     },
     muiTablePaginationProps: {
-      rowsPerPageOptions: [5, 10, 25],
+      rowsPerPageOptions: [5, 15, 25, 30],
     },
     renderTopToolbarCustomActions: () => (
       user.role.assignedModules.some(module => module.moduleName === 'user management' && module.action === 'create') && (
