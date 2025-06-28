@@ -648,48 +648,47 @@ const LeadManagement = () => {
               error={!!fieldErrors.descriptions}
               helperText={fieldErrors.descriptions}
             />
-            <FormControl 
-              fullWidth 
-              margin="normal" 
+            <TextField
+              label="User"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.selectedUser}
+              onChange={(e) => {
+                setFormData({ ...formData, selectedUser: e.target.value });
+                setFieldErrors(prev => ({ ...prev, selectedUser: '' }));
+              }}
               required
               error={!!fieldErrors.selectedUser}
+              helperText={fieldErrors.selectedUser}
+              select
             >
-              <InputLabel>User</InputLabel>
-              <Select
-                value={formData.selectedUser}
-                onChange={(e) => {
-                  setFormData({ ...formData, selectedUser: e.target.value });
-                  setFieldErrors(prev => ({ ...prev, selectedUser: '' }));
-                }}
-                inputProps={{ required: false }}
-                disabled={users.length === 1}
-              >
-                {users.map((user) => (
-                  <MenuItem key={user._id} value={user._id}>
-                    {user.userName}
-                  </MenuItem>
-                ))}
-              </Select>
-              {fieldErrors.selectedUser && (
-                <FormHelperText>{fieldErrors.selectedUser}</FormHelperText>
-              )}
-            </FormControl>
-            <FormControl fullWidth margin="normal" required>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={formData.leadStatus}
-                onChange={(e) => {
-                  setFormData({ ...formData, leadStatus: e.target.value });
-                  setFieldErrors(prev => ({ ...prev, leadStatus: '' }));
-                }}
-                inputProps={{ required: false }}
-              >
-                <MenuItem value="Won">Won</MenuItem>
-                <MenuItem value="Pending">Pending</MenuItem>
-                <MenuItem value="Follow Up">Follow Up</MenuItem>
-                <MenuItem value="Lost">Lost</MenuItem>
-              </Select>
-            </FormControl>
+              {users.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  {user.userName}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Status"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.leadStatus}
+              onChange={(e) => {
+                setFormData({ ...formData, leadStatus: e.target.value });
+                setFieldErrors(prev => ({ ...prev, leadStatus: '' }));
+              }}
+              required
+              error={!!fieldErrors.leadStatus}
+              helperText={fieldErrors.leadStatus}
+              select
+            >
+              <MenuItem value="Pending">Pending</MenuItem>
+              <MenuItem value="Won">Won</MenuItem>
+              <MenuItem value="Lost">Lost</MenuItem>
+              <MenuItem value="Follow Up">Follow Up</MenuItem>
+            </TextField>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleFormClose}>Cancel</Button>

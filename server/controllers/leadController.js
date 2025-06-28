@@ -147,8 +147,8 @@ exports.updateLead = async (req, res) => {
 
 exports.deleteLead = async (req, res) => {
   try {
-    const { leadId } = req.params;
-    const find_lead = await Lead.findById(leadId);
+    const { lead_id } = req.params;
+    const find_lead = await Lead.findById(lead_id);
     
     if (!find_lead) {
       return res.status(404).json({ success: false, message: "Lead not found" });

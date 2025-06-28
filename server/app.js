@@ -19,6 +19,7 @@ app.use(
   cors({
     //http://localhost:3000
     // https://lead-management-front.vercel.app
+    //https://leadmgmt.jarvistechnolabs.com
     origin: 'https://lead-management-front.vercel.app', // Allow only your frontend domain
     methods: "GET,POST,PUT,DELETE",
     credentials: true, // Allow cookies and authentication headers
